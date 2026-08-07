@@ -314,6 +314,16 @@ export function generateStandaloneHtml(rawConfig) {
       return maxPossible > 0 ? Math.round((raw / maxPossible) * 100) : 0;
     }
 
+    function getAnswerLabels() {
+      let labeled = {};
+      QUIZ_CONFIG.questions.forEach(q => {
+        const val = answers[q.id];
+        const opt = q.options ? q.options.find(o => o.value === val) : null;
+        labeled[q.id] = opt ? opt.label : (val !== undefined ? val : 'N/A');
+      });
+      return labeled;
+    }
+
     function getActiveResult(score) {
       const results = QUIZ_CONFIG.results || [];
       return results.find(r => score <= r.maxScore) || results[results.length - 1] || {
@@ -537,7 +547,7 @@ export function generateStandaloneHtml(rawConfig) {
         role: lead.role,
         projectStatus: lead.projectStatus,
         project_status: lead.projectStatus,
-        answers: answers,
+        answers: getAnswerLabels(),
         score: calculateScore(),
         timestamp: new Date().toISOString()
       });
@@ -553,6 +563,8 @@ export function generateStandaloneHtml(rawConfig) {
         action: 'update',
         email: lead.email,
         assessmentRequested: true,
+        consultationRequested: true,
+        requestConsultation: "Yes",
         timestamp: new Date().toISOString()
       });
     }
@@ -566,6 +578,7 @@ export function generateStandaloneHtml(rawConfig) {
         action: 'update',
         email: lead.email,
         tel: telVal,
+        phone: telVal,
         timestamp: new Date().toISOString()
       });
     }
@@ -750,7 +763,7 @@ This package contains the standalone, end-user interactive quiz application read
 
 ---
 
-## 📊 Google Apps Script for Google Sheets (Handles all 5 Form Fields)
+## 📊 Google Apps Script for Google Sheets (Handles Date, Project Status, Request Consultation, Phone & Answers Q1..Qn)
 
 If connecting to Google Sheets, paste the following Google Apps Script in **Extensions > Apps Script** inside your spreadsheet and deploy as a Web App (Execute as: *Me*, Access: *Anyone*):
 
@@ -758,10 +771,6 @@ If connecting to Google Sheets, paste the following Google Apps Script in **Exte
 function doPost(e) {
   try {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-    if (sheet.getLastRow() === 0) {
-      sheet.appendRow(["Timestamp", "Action", "Full Name", "Work Email", "Company", "Job Title / Role", "Project Status", "Overall Score", "Assessment Requested", "Telephone", "Survey Answers"]);
-      sheet.getRange(1, 1, 1, 11).setFontWeight("bold").setBackground("#F3F4F6");
-    }
     var data = {};
     if (e.parameter && e.parameter.payload) {
       data = JSON.parse(e.parameter.payload);
@@ -770,32 +779,142 @@ function doPost(e) {
     } else {
       data = e.parameter || {};
     }
-    var lead = data.lead || data || {};
-    var timestamp = data.timestamp || new Date().toISOString();
+
     var action = data.action || "submit";
+    var lead = data.lead || data || {};
+    var answers = data.answers || {};
+    var timestamp = data.timestamp || new Date().toISOString();
+    var email = String(data.email || lead.email || "").trim();
+
+    if (sheet.getLastRow() === 0) {
+      var defaultHeaders = ["Timestamp", "Name", "Email", "Company", "Title", "Project Status", "Readiness Score", "Request Consultation", "Phone"];
+      var qKeys = Object.keys(answers);
+      if (qKeys.length > 0) {
+        qKeys.sort(function(a, b) {
+          var numA = parseInt(a.replace(/\D/g, '')) || 0;
+          var numB = parseInt(b.replace(/\D/g, '')) || 0;
+          return numA - numB;
+        });
+        qKeys.forEach(function(k) { defaultHeaders.push(k.toUpperCase()); });
+      } else {
+        for (var i = 1; i <= 12; i++) { defaultHeaders.push("Q" + i); }
+      }
+      sheet.appendRow(defaultHeaders);
+      sheet.getRange(1, 1, 1, defaultHeaders.length).setFontWeight("bold").setBackground("#F3F4F6");
+    }
+
+    var lastCol = sheet.getLastColumn();
+    var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    var headersLower = headers.map(function(h) { return String(h).toLowerCase().trim(); });
+
+    function ensureHeader(colName, keywords) {
+      var exists = headersLower.some(function(h) {
+        return keywords.some(function(kw) { return h.indexOf(kw.toLowerCase()) !== -1; });
+      });
+      if (!exists) {
+        sheet.getRange(1, sheet.getLastColumn() + 1).setValue(colName).setFontWeight("bold");
+        lastCol = sheet.getLastColumn();
+        headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+        headersLower = headers.map(function(h) { return String(h).toLowerCase().trim(); });
+      }
+    }
+
+    ensureHeader("Project Status", ["project"]);
+    ensureHeader("Request Consultation", ["consultation", "assessment"]);
+    ensureHeader("Phone", ["phone", "telephone", "tel"]);
+
+    Object.keys(answers).forEach(function(qKey) {
+      var keyLower = qKey.toLowerCase().trim();
+      var keyNum = keyLower.replace(/\D/g, '');
+      var exists = headersLower.some(function(h) {
+        return h === keyLower || (keyNum && (h === "q" + keyNum || h.indexOf("q" + keyNum + ":") === 0 || h.indexOf("q" + keyNum + " ") === 0));
+      });
+      if (!exists) {
+        sheet.getRange(1, sheet.getLastColumn() + 1).setValue(qKey.toUpperCase()).setFontWeight("bold");
+        lastCol = sheet.getLastColumn();
+        headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+        headersLower = headers.map(function(h) { return String(h).toLowerCase().trim(); });
+      }
+    });
 
     if (action === "submit") {
-      sheet.appendRow([
-        timestamp,
-        action,
-        lead.name || data.name || "",
-        lead.email || data.email || "",
-        lead.company || data.company || "",
-        lead.role || data.role || "",
-        lead.projectStatus || lead.project_status || data.projectStatus || data.project_status || "",
-        data.score || "",
-        "No",
-        "",
-        JSON.stringify(data.answers || {})
-      ]);
+      var newRow = [];
+      for (var i = 0; i < headers.length; i++) {
+        var head = headersLower[i];
+        if (head.indexOf("timestamp") !== -1 || head.indexOf("date") !== -1 || head.indexOf("time") !== -1) {
+          newRow.push(timestamp);
+        } else if (head === "name" || head.indexOf("full name") !== -1) {
+          newRow.push(lead.name || data.name || "");
+        } else if (head === "email" || head.indexOf("work email") !== -1) {
+          newRow.push(lead.email || data.email || "");
+        } else if (head === "company" || head.indexOf("organization") !== -1) {
+          newRow.push(lead.company || data.company || "");
+        } else if (head === "title" || head.indexOf("role") !== -1 || head.indexOf("job title") !== -1) {
+          newRow.push(lead.role || lead.title || data.role || data.title || "");
+        } else if (head.indexOf("project") !== -1) {
+          newRow.push(lead.projectStatus || lead.project_status || data.projectStatus || data.project_status || "");
+        } else if (head.indexOf("score") !== -1 || head.indexOf("readiness") !== -1) {
+          newRow.push(data.score !== undefined ? data.score : "");
+        } else if (head.indexOf("consultation") !== -1 || head.indexOf("assessment") !== -1 || head.indexOf("request") !== -1) {
+          newRow.push("No");
+        } else if (head.indexOf("phone") !== -1 || head.indexOf("telephone") !== -1 || head === "tel") {
+          newRow.push(data.tel || data.phone || "");
+        } else {
+          var matchedVal = "";
+          Object.keys(answers).forEach(function(qKey) {
+            var qLower = qKey.toLowerCase().trim();
+            var qNum = qLower.replace(/\D/g, '');
+            if (head === qLower || (qNum && (head === "q" + qNum || head.indexOf("q" + qNum + ":") === 0 || head.indexOf("q" + qNum + " ") === 0))) {
+              matchedVal = answers[qKey];
+            }
+          });
+          if (matchedVal !== "") {
+            newRow.push(matchedVal);
+          } else if (head.indexOf("answers") !== -1 || head.indexOf("survey") !== -1) {
+            newRow.push(JSON.stringify(answers));
+          } else {
+            newRow.push("");
+          }
+        }
+      }
+      sheet.appendRow(newRow);
+
     } else if (action === "update") {
-      var email = data.email || lead.email || "";
       var rows = sheet.getDataRange().getValues();
-      for (var i = 1; i < rows.length; i++) {
-        if (rows[i][3] === email) {
-          if (data.assessmentRequested) sheet.getRange(i + 1, 9).setValue("Yes");
-          if (data.tel) sheet.getRange(i + 1, 10).setValue(data.tel);
-          break;
+      var emailColIdx = -1;
+      for (var c = 0; c < headersLower.length; c++) {
+        if (headersLower[c].indexOf("email") !== -1) { emailColIdx = c; break; }
+      }
+      if (emailColIdx === -1) emailColIdx = 2;
+
+      var consultColIdx = -1;
+      var phoneColIdx = -1;
+      for (var c = 0; c < headersLower.length; c++) {
+        if (headersLower[c].indexOf("consultation") !== -1 || headersLower[c].indexOf("assessment") !== -1) consultColIdx = c;
+        if (headersLower[c].indexOf("phone") !== -1 || headersLower[c].indexOf("telephone") !== -1 || headersLower[c] === "tel") phoneColIdx = c;
+      }
+
+      var targetRowIndex = -1;
+      if (email !== "") {
+        for (var r = rows.length - 1; r >= 1; r--) {
+          var rowEmail = String(rows[r][emailColIdx] || "").trim();
+          if (rowEmail.toLowerCase() === email.toLowerCase()) {
+            targetRowIndex = r;
+            break;
+          }
+        }
+      }
+
+      if (targetRowIndex === -1 && rows.length > 1) {
+        targetRowIndex = rows.length - 1;
+      }
+
+      if (targetRowIndex !== -1) {
+        if ((data.assessmentRequested || data.consultationRequested || data.requestConsultation) && consultColIdx !== -1) {
+          sheet.getRange(targetRowIndex + 1, consultColIdx + 1).setValue("Yes");
+        }
+        if ((data.tel || data.phone) && phoneColIdx !== -1) {
+          sheet.getRange(targetRowIndex + 1, phoneColIdx + 1).setValue(data.tel || data.phone);
         }
       }
     }
