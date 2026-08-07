@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Settings, Plus, Trash2, CheckCircle2, BarChart2, Mail, Lock, ArrowRight, ArrowLeft, Download, Code, Phone, RefreshCw, Eye, FileText, Upload, Image } from 'lucide-react';
+import { Settings, Plus, Trash2, CheckCircle2, BarChart2, Mail, Lock, ArrowRight, ArrowLeft, Download, Code, Phone, RefreshCw, Eye, FileText, Upload, Image, AlertCircle } from 'lucide-react';
 import JSZip from 'jszip';
 import { generateStandaloneHtml, generateReadme, generateLeadPayloadSchema } from './generateStandaloneQuiz';
 
@@ -271,6 +271,25 @@ const STYLES = `
   }
 `;
 
+export const FREE_EMAIL_DOMAINS = new Set([
+  'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'me.com', 'mac.com',
+  'aol.com', 'proton.me', 'protonmail.com', 'zoho.com', 'yandex.com', 'mail.com', 'gmx.com',
+  'live.com', 'msn.com', 'comcast.net', 'sbcglobal.net', 'cox.net', 'att.net', 'verizon.net',
+  'googlemail.com', 'rocketmail.com', 'ymail.com', 'mail.ru', 'qq.com', '163.com', '126.com',
+  'fastmail.com', 'hushmail.com', 'tutanota.com', 'tutamail.com'
+]);
+
+export function isWorkEmail(email) {
+  if (!email || typeof email !== 'string') return false;
+  const trimmed = email.trim().toLowerCase();
+  if (!trimmed.includes('@')) return false;
+  const parts = trimmed.split('@');
+  if (parts.length !== 2) return false;
+  const domain = parts[1];
+  if (!domain || !domain.includes('.')) return false;
+  return !FREE_EMAIL_DOMAINS.has(domain);
+}
+
 export default function App() {
   const [config, setConfig] = useState(() => {
     const saved = localStorage.getItem('quizBuilderConfig');
@@ -286,8 +305,9 @@ export default function App() {
   const [integrationPasswordInput, setIntegrationPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState(false);
   const [step, setStep] = useState(0);
+  const [isAnswering, setIsAnswering] = useState(false);
   const [answers, setAnswers] = useState({});
-  const [lead, setLead] = useState({ name: '', email: '', company: '', role: '' });
+  const [lead, setLead] = useState({ name: '', email: '', company: '', role: '', projectStatus: '' });
   
   const [aiReport, setAiReport] = useState('');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
@@ -416,13 +436,7 @@ export default function App() {
             ${aiReport}
           </div>
 
-          <script>
-            window.onload = function() {
-              setTimeout(function() {
-                window.print();
-              }, 500);
-            };
-          </script>
+          ' + '<' + 'script>window.onload = function() { setTimeout(function() { window.print(); }, 500); };<' + '/script>' + '
         </body>
       </html>
     `);
@@ -455,11 +469,19 @@ export default function App() {
     `💡 Formulating Steelcase ARC diagnostic roadmap and tailored spatial recommendations...`
   ], [lead.company, scoreData]);
 
-  const canProceed = isQuestionStep ? answers[config.questions[step]?.id] !== undefined : (lead.name && lead.email);
+  const isEmailValid = isWorkEmail(lead.email);
+  const canProceed = isQuestionStep 
+    ? answers[config.questions[step]?.id] !== undefined 
+    : (lead.name && lead.email && isEmailValid && lead.company && lead.projectStatus);
 
   const handleAnswer = (val) => {
-    setAnswers({ ...answers, [config.questions[step].id]: val });
-    setTimeout(() => setStep(step + 1), 300);
+    if (isAnswering || step >= config.questions.length) return;
+    setIsAnswering(true);
+    setAnswers(prev => ({ ...prev, [config.questions[step].id]: val }));
+    setTimeout(() => {
+      setStep(prev => prev < config.questions.length ? prev + 1 : prev);
+      setIsAnswering(false);
+    }, 300);
   };
 
   const getAnswerLabels = () => {
@@ -618,9 +640,10 @@ export default function App() {
 
   const resetQuiz = () => {
     setStep(0);
+    setIsAnswering(false);
     setAnswers({});
     setAiReport("");
-    setLead({ name: '', email: '', company: '', role: '' });
+    setLead({ name: '', email: '', company: '', role: '', projectStatus: '' });
     setApplied(false);
     setTelSent(false);
     setTel("");
@@ -1136,15 +1159,84 @@ export default function App() {
               <div>
                 <div className="question-head">
                   <h2>Generate Your Diagnostic Report</h2>
-                  <p style={{color:'#5F6368', marginTop:'8px'}}>Data collection complete. Enter your details to process your customized readiness profile.</p>
+                  <p style={{color:'#5F6368', marginTop:'8px'}}>Data collection complete. Enter your contact details and workplace project status to process your customized readiness profile.</p>
                 </div>
                 <div className="form-grid">
-                  <div className="form-group"><label>Full Name *</label><input required value={lead.name} onChange={e=>setLead({...lead, name: e.target.value})} /></div>
-                  <div className="form-group"><label>Work Email *</label><input type="email" required value={lead.email} onChange={e=>setLead({...lead, email: e.target.value})} /></div>
-                  <div className="form-group"><label>Company</label><input value={lead.company} onChange={e=>setLead({...lead, company: e.target.value})} /></div>
-                  <div className="form-group"><label>Role / Job Title</label><input value={lead.role} onChange={e=>setLead({...lead, role: e.target.value})} /></div>
+                  <div className="form-group">
+                    <label>Full Name *</label>
+                    <input 
+                      required 
+                      placeholder="e.g. Jane Doe"
+                      value={lead.name} 
+                      onChange={e=>setLead({...lead, name: e.target.value})} 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Work Email *</label>
+                    <input 
+                      type="email" 
+                      required 
+                      placeholder="name@company.com"
+                      value={lead.email} 
+                      onChange={e=>setLead({...lead, email: e.target.value})} 
+                      style={{
+                        borderColor: (lead.email && lead.email.includes('@') && !isWorkEmail(lead.email)) ? '#EF4444' : '#DADCE0'
+                      }}
+                    />
+                    {lead.email && lead.email.includes('@') && !isWorkEmail(lead.email) && (
+                      <div style={{ fontSize: '12px', color: '#DC2626', marginTop: '6px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <AlertCircle size={14} /> Please enter your official work email. Personal accounts (Gmail, Yahoo, Hotmail, etc.) are not accepted.
+                      </div>
+                    )}
+                  </div>
+                  <div className="form-group">
+                    <label>Company *</label>
+                    <input 
+                      required
+                      placeholder="e.g. Steelcase Inc."
+                      value={lead.company} 
+                      onChange={e=>setLead({...lead, company: e.target.value})} 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Job Title / Role</label>
+                    <input 
+                      placeholder="e.g. Director of Real Estate & Workplace"
+                      value={lead.role} 
+                      onChange={e=>setLead({...lead, role: e.target.value})} 
+                    />
+                  </div>
+                  <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#202124', marginBottom: '8px' }}>
+                      What best describes your current workplace project status? *
+                    </label>
+                    <select
+                      required
+                      value={lead.projectStatus}
+                      onChange={e=>setLead({...lead, projectStatus: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '11px 14px',
+                        border: '1px solid #DADCE0',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        backgroundColor: 'white',
+                        color: lead.projectStatus ? '#111827' : '#6B7280',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="" disabled>-- Select project status --</option>
+                      <option value="A - Active project, decisions within 6 months">A - Active project, decisions within 6 months</option>
+                      <option value="B - Exploring a project, 6-12 months">B - Exploring a project, 6-12 months</option>
+                      <option value="C - Future project, no timeline yet">C - Future project, no timeline yet</option>
+                      <option value="D - Researching workplace trends and best practices">D - Researching workplace trends and best practices</option>
+                      <option value="E - We are Dealer / Architect / Designer / Industry Partner">E - We are Dealer / Architect / Designer / Industry Partner</option>
+                    </select>
+                  </div>
                 </div>
-                <div style={{fontSize:'12px', color:'#5F6368', display:'flex', alignItems:'center', gap:'6px'}}><Lock size={12}/> Data securely processed.</div>
+                <div style={{fontSize:'12px', color:'#5F6368', display:'flex', alignItems:'center', gap:'6px'}}>
+                  <Lock size={12}/> Data securely processed. Official work email required.
+                </div>
               </div>
             )}
 

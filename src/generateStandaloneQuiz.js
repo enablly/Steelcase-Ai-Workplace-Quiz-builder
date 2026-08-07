@@ -257,9 +257,29 @@ export function generateStandaloneHtml(rawConfig) {
   <script>
     const QUIZ_CONFIG = ${configJson};
 
+    const FREE_EMAIL_DOMAINS = new Set([
+      'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'me.com', 'mac.com',
+      'aol.com', 'proton.me', 'protonmail.com', 'zoho.com', 'yandex.com', 'mail.com', 'gmx.com',
+      'live.com', 'msn.com', 'comcast.net', 'sbcglobal.net', 'cox.net', 'att.net', 'verizon.net',
+      'googlemail.com', 'rocketmail.com', 'ymail.com', 'mail.ru', 'qq.com', '163.com', '126.com',
+      'fastmail.com', 'hushmail.com', 'tutanota.com', 'tutamail.com'
+    ]);
+
+    function isWorkEmail(email) {
+      if (!email || typeof email !== 'string') return false;
+      const trimmed = email.trim().toLowerCase();
+      if (!trimmed.includes('@')) return false;
+      const parts = trimmed.split('@');
+      if (parts.length !== 2) return false;
+      const domain = parts[1];
+      if (!domain || !domain.includes('.')) return false;
+      return !FREE_EMAIL_DOMAINS.has(domain);
+    }
+
     let currentStep = 0;
+    let isTransitioning = false;
     let answers = {};
-    let lead = { name: '', email: '', company: '', role: '' };
+    let lead = { name: '', email: '', company: '', role: '', projectStatus: '' };
     let isApplied = false;
     let telSent = false;
 
@@ -272,14 +292,14 @@ export function generateStandaloneHtml(rawConfig) {
 
     function calculateProgress() {
       const totalQuestions = QUIZ_CONFIG.questions.length;
-      const isResult = currentStep === totalQuestions + 1;
+      const isResult = currentStep > totalQuestions;
       if (isResult) return 100;
       return Math.round((currentStep / (totalQuestions + 1)) * 100);
     }
 
     function updateProgressUI() {
       const p = calculateProgress();
-      const isResult = currentStep === QUIZ_CONFIG.questions.length + 1;
+      const isResult = currentStep > QUIZ_CONFIG.questions.length;
       document.getElementById('progress-fill').style.width = p + '%';
       document.getElementById('progress-text').innerText = p + '%';
       document.getElementById('progress-label').innerText = isResult ? 'Report Generated' : 'Data Collection';
@@ -340,22 +360,51 @@ export function generateStandaloneHtml(rawConfig) {
         \`;
       } else if (currentStep === totalQuestions) {
         // Gate Step
+        const isFreeEmail = lead.email && lead.email.includes('@') && !isWorkEmail(lead.email);
         mainCard.innerHTML = \`
           <div class="question-head">
             <h2>Generate Your Diagnostic Report</h2>
-            <p style="color:#5F6368; margin-top:8px;">Data collection complete. Enter your details to process your customized readiness profile.</p>
+            <p style="color:#5F6368; margin-top:8px;">Data collection complete. Enter your contact details and workplace project status to process your customized readiness profile.</p>
           </div>
           <form onsubmit="submitGateForm(event)">
             <div class="form-grid">
-              <div class="form-group"><label>Full Name *</label><input id="lead-name" required value="\${escapeHtml(lead.name)}" oninput="lead.name=this.value; checkCanProceed();" /></div>
-              <div class="form-group"><label>Work Email *</label><input type="email" id="lead-email" required value="\${escapeHtml(lead.email)}" oninput="lead.email=this.value; checkCanProceed();" /></div>
-              <div class="form-group"><label>Company</label><input id="lead-company" value="\${escapeHtml(lead.company)}" oninput="lead.company=this.value" /></div>
-              <div class="form-group"><label>Role / Job Title</label><input id="lead-role" value="\${escapeHtml(lead.role)}" oninput="lead.role=this.value" /></div>
+              <div class="form-group">
+                <label>Full Name *</label>
+                <input id="lead-name" required placeholder="e.g. Jane Doe" value="\${escapeHtml(lead.name)}" oninput="lead.name=this.value; checkCanProceed();" />
+              </div>
+              <div class="form-group">
+                <label>Work Email *</label>
+                <input type="email" id="lead-email" required placeholder="name@company.com" value="\${escapeHtml(lead.email)}" oninput="handleEmailInput(this.value);" style="border-color: \${isFreeEmail ? '#EF4444' : '#DADCE0'};" />
+                <div id="email-error-msg" style="display: \${isFreeEmail ? 'block' : 'none'}; font-size:12px; color:#DC2626; margin-top:6px; font-weight:500;">
+                  ⚠️ Please enter your official work email. Personal accounts (Gmail, Yahoo, Hotmail, etc.) are not accepted.
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Company *</label>
+                <input id="lead-company" required placeholder="e.g. Steelcase Inc." value="\${escapeHtml(lead.company)}" oninput="lead.company=this.value; checkCanProceed();" />
+              </div>
+              <div class="form-group">
+                <label>Job Title / Role</label>
+                <input id="lead-role" placeholder="e.g. Director of Real Estate & Workplace" value="\${escapeHtml(lead.role)}" oninput="lead.role=this.value" />
+              </div>
+              <div class="form-group" style="grid-column: span 2;">
+                <label style="display:block; font-size:13px; font-weight:600; color:#202124; margin-bottom:8px;">
+                  What best describes your current workplace project status? *
+                </label>
+                <select id="lead-status" required onchange="lead.projectStatus=this.value; checkCanProceed();" style="width:100%; padding:10px 14px; border:1px solid #DADCE0; border-radius:4px; font-size:14px; background-color:white; color:\${lead.projectStatus ? '#111827' : '#6B7280'};">
+                  <option value="" \${!lead.projectStatus ? 'selected' : ''} disabled>-- Select project status --</option>
+                  <option value="A - Active project, decisions within 6 months" \${lead.projectStatus === "A - Active project, decisions within 6 months" ? 'selected' : ''}>A - Active project, decisions within 6 months</option>
+                  <option value="B - Exploring a project, 6-12 months" \${lead.projectStatus === "B - Exploring a project, 6-12 months" ? 'selected' : ''}>B - Exploring a project, 6-12 months</option>
+                  <option value="C - Future project, no timeline yet" \${lead.projectStatus === "C - Future project, no timeline yet" ? 'selected' : ''}>C - Future project, no timeline yet</option>
+                  <option value="D - Researching workplace trends and best practices" \${lead.projectStatus === "D - Researching workplace trends and best practices" ? 'selected' : ''}>D - Researching workplace trends and best practices</option>
+                  <option value="E - We are Dealer / Architect / Designer / Industry Partner" \${lead.projectStatus === "E - We are Dealer / Architect / Designer / Industry Partner" ? 'selected' : ''}>E - We are Dealer / Architect / Designer / Industry Partner</option>
+                </select>
+              </div>
             </div>
-            <div style="font-size:12px; color:#5F6368; margin-bottom:20px; display:flex; align-items:center; gap:6px;">🔒 Data securely processed.</div>
+            <div style="font-size:12px; color:#5F6368; margin-bottom:20px; display:flex; align-items:center; gap:6px;">🔒 Data securely processed. Official work email required.</div>
             <div class="nav-row">
               <button type="button" class="btn btn-secondary" onclick="prevStep()">← Back</button>
-              <button type="submit" id="btn-submit-gate" class="btn btn-primary">Generate Report →</button>
+              <button type="submit" id="btn-submit-gate" class="btn btn-primary" \${!(lead.name && lead.email && isWorkEmail(lead.email) && lead.company && lead.projectStatus) ? 'disabled' : ''}>Generate Report →</button>
             </div>
           </form>
         \`;
@@ -423,32 +472,55 @@ export function generateStandaloneHtml(rawConfig) {
     }
 
     function selectAnswer(qId, val) {
+      if (isTransitioning || currentStep >= QUIZ_CONFIG.questions.length) return;
+      isTransitioning = true;
       answers[qId] = val;
       render();
       setTimeout(() => {
-        currentStep++;
+        if (currentStep < QUIZ_CONFIG.questions.length) {
+          currentStep++;
+        }
+        isTransitioning = false;
         render();
       }, 250);
     }
 
     function prevStep() {
+      if (isTransitioning) return;
       if (currentStep > 0) {
         currentStep--;
         render();
       }
     }
 
+    function handleEmailInput(val) {
+      lead.email = val;
+      const errEl = document.getElementById('email-error-msg');
+      const emailInput = document.getElementById('lead-email');
+      const isFree = val && val.includes('@') && !isWorkEmail(val);
+      if (errEl) {
+        errEl.style.display = isFree ? 'block' : 'none';
+      }
+      if (emailInput) {
+        emailInput.style.borderColor = isFree ? '#EF4444' : '#DADCE0';
+      }
+      checkCanProceed();
+    }
+
     function checkCanProceed() {
       const btn = document.getElementById('btn-submit-gate');
       if (btn) {
-        const can = lead.name && lead.email;
+        const can = lead.name && lead.email && isWorkEmail(lead.email) && lead.company && lead.projectStatus;
         btn.disabled = !can;
       }
     }
 
     async function submitGateForm(e) {
       e.preventDefault();
-      if (!lead.name || !lead.email) return;
+      if (!lead.name || !lead.email || !isWorkEmail(lead.email) || !lead.company || !lead.projectStatus) {
+        alert('Please complete all required fields with your official work email and workplace project status.');
+        return;
+      }
 
       const submitBtn = document.getElementById('btn-submit-gate');
       if (submitBtn) {
@@ -516,8 +588,9 @@ export function generateStandaloneHtml(rawConfig) {
 
     function resetQuiz() {
       currentStep = 0;
+      isTransitioning = false;
       answers = {};
-      lead = { name: '', email: '', company: '', role: '' };
+      lead = { name: '', email: '', company: '', role: '', projectStatus: '' };
       isApplied = false;
       telSent = false;
       render();
@@ -579,71 +652,33 @@ export function generateStandaloneHtml(rawConfig) {
       const printWindow = window.open('', '_blank');
       if (!printWindow) return;
 
-      printWindow.document.write(\`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="utf-8">
-            <title>\${companyName} - Steelcase ARC AI Diagnostic Report</title>
-            <style>
-              body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #1F2937; line-height: 1.6; max-width: 900px; margin: 0 auto; }
-              .header-banner { border-bottom: 2px solid #1D4ED8; padding-bottom: 20px; margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; }
-              .score-badge { background: #1D4ED8; color: white; padding: 12px 20px; border-radius: 8px; text-align: center; min-width: 120px; }
-              .score-num { font-size: 32px; font-weight: 700; line-height: 1; }
-              .score-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; margin-top: 4px; }
-              h1 { margin: 0 0 8px 0; font-size: 24px; color: #1E3A8A; }
-              .meta { font-size: 13px; color: #4B5563; }
-              .top-insights-box { background: #F0F7FF; border: 1px solid #BFDBFE; border-left: 5px solid #1D4ED8; border-radius: 8px; padding: 20px 24px; margin-bottom: 28px; }
-              .top-insights-box h3 { margin-top: 0; color: #1E3A8A; font-size: 16px; font-weight: 700; }
-              .footnotes-box { margin-top: 36px; padding: 22px 26px; background: #F8FAFC; border: 1px solid #E2E8F0; border-left: 4px solid #2563EB; border-radius: 8px; }
-              .footnotes-box h4 { margin: 0 0 14px 0; font-size: 14px; font-weight: 700; color: #1E3A8A; text-transform: uppercase; }
-              a { color: #1D4ED8; text-decoration: underline; font-weight: 500; }
-              .cite-badge { display: inline-flex; align-items: center; background: #EFF6FF; color: #1D4ED8 !important; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px; border: 1px solid #BFDBFE; text-decoration: none !important; }
-              .print-bar { background: #F3F4F6; padding: 12px 20px; border-radius: 8px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #E5E7EB; }
-              @media print {
-                .no-print { display: none !important; }
-                body { padding: 0; }
-              }
-            </style>
-          </head>
-          <body>
-            <div class="print-bar no-print">
-              <span style="font-size: 13px; color: #4B5563;">📄 Printable AI Readiness Diagnostic Report — Save as PDF via browser print</span>
-              <button onclick="window.print()" style="background: #1D4ED8; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">
-                🖨️ Save as PDF
-              </button>
-            </div>
-            
-            <div class="header-banner">
-              <div>
-                \${logoHtml}
-                <h1>Steelcase ARC — AI Workplace Readiness Diagnostic</h1>
-                <div class="meta">
-                  <strong>Client:</strong> \${companyName} &nbsp;|&nbsp; 
-                  <strong>Contact:</strong> \${leadNameStr} (\${leadRoleStr}) &nbsp;|&nbsp; 
-                  <strong>Date:</strong> \${new Date().toLocaleDateString()}
-                </div>
-              </div>
-              <div class="score-badge">
-                <div class="score-num">\${score}</div>
-                <div class="score-lbl">Readiness Score</div>
-              </div>
-            </div>
-
-            <div class="report-content">
-              \${reportHtml}
-            </div>
-
-            <script>
-              window.onload = function() {
-                setTimeout(function() {
-                  window.print();
-                }, 500);
-              };
-            </script>
-          </body>
-        </html>
-      \`);
+      const printDoc = printWindow.document;
+      printDoc.open();
+      printDoc.write('<!DOCTYPE html><html><head><meta charset="utf-8">');
+      printDoc.write('<title>' + companyName + ' - Steelcase ARC AI Diagnostic Report</title>');
+      printDoc.write('<style>');
+      printDoc.write('body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #1F2937; line-height: 1.6; max-width: 900px; margin: 0 auto; }');
+      printDoc.write('.header-banner { border-bottom: 2px solid #1D4ED8; padding-bottom: 20px; margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; }');
+      printDoc.write('.score-badge { background: #1D4ED8; color: white; padding: 12px 20px; border-radius: 8px; text-align: center; min-width: 120px; }');
+      printDoc.write('.score-num { font-size: 32px; font-weight: 700; line-height: 1; }');
+      printDoc.write('.score-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; margin-top: 4px; }');
+      printDoc.write('h1 { margin: 0 0 8px 0; font-size: 24px; color: #1E3A8A; }');
+      printDoc.write('.meta { font-size: 13px; color: #4B5563; }');
+      printDoc.write('.top-insights-box { background: #F0F7FF; border: 1px solid #BFDBFE; border-left: 5px solid #1D4ED8; border-radius: 8px; padding: 20px 24px; margin-bottom: 28px; }');
+      printDoc.write('.top-insights-box h3 { margin-top: 0; color: #1E3A8A; font-size: 16px; font-weight: 700; }');
+      printDoc.write('.footnotes-box { margin-top: 36px; padding: 22px 26px; background: #F8FAFC; border: 1px solid #E2E8F0; border-left: 4px solid #2563EB; border-radius: 8px; }');
+      printDoc.write('.footnotes-box h4 { margin: 0 0 14px 0; font-size: 14px; font-weight: 700; color: #1E3A8A; text-transform: uppercase; }');
+      printDoc.write('a { color: #1D4ED8; text-decoration: underline; font-weight: 500; }');
+      printDoc.write('.cite-badge { display: inline-flex; align-items: center; background: #EFF6FF; color: #1D4ED8 !important; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px; border: 1px solid #BFDBFE; text-decoration: none !important; }');
+      printDoc.write('.print-bar { background: #F3F4F6; padding: 12px 20px; border-radius: 8px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #E5E7EB; }');
+      printDoc.write('@media print { .no-print { display: none !important; } body { padding: 0; } }');
+      printDoc.write('</style></head><body>');
+      printDoc.write('<div class="print-bar no-print"><span style="font-size: 13px; color: #4B5563;">📄 Printable AI Readiness Diagnostic Report — Save as PDF via browser print</span><button onclick="window.print()" style="background: #1D4ED8; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">🖨️ Save as PDF</button></div>');
+      printDoc.write('<div class="header-banner"><div>' + logoHtml + '<h1>Steelcase ARC — AI Workplace Readiness Diagnostic</h1><div class="meta"><strong>Client:</strong> ' + companyName + ' &nbsp;|&nbsp; <strong>Contact:</strong> ' + leadNameStr + ' (' + leadRoleStr + ') &nbsp;|&nbsp; <strong>Date:</strong> ' + new Date().toLocaleDateString() + '</div></div><div class="score-badge"><div class="score-num">' + score + '</div><div class="score-lbl">Readiness Score</div></div></div>');
+      printDoc.write('<div class="report-content">' + reportHtml + '</div>');
+      printDoc.write('<' + 'script>window.onload = function() { setTimeout(function() { window.print(); }, 500); };<' + '/script>');
+      printDoc.write('</body></html>');
+      printDoc.close();
       printWindow.document.close();
     }
 
@@ -755,11 +790,12 @@ export function generateLeadPayloadSchema() {
         "type": "object",
         "properties": {
           "name": { "type": "string", "example": "Jane Doe" },
-          "email": { "type": "string", "example": "jane@company.com" },
-          "company": { "type": "string", "example": "Acme Corp" },
-          "role": { "type": "string", "example": "Director of Workplace" }
+          "email": { "type": "string", "example": "jane@steelcase.com" },
+          "company": { "type": "string", "example": "Steelcase Inc." },
+          "role": { "type": "string", "example": "Director of Workplace Strategy" },
+          "projectStatus": { "type": "string", "example": "A - Active project, decisions within 6 months" }
         },
-        "required": ["name", "email"]
+        "required": ["name", "email", "company", "projectStatus"]
       },
       "answers": {
         "type": "object",
