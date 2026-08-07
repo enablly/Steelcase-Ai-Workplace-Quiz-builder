@@ -531,6 +531,12 @@ export function generateStandaloneHtml(rawConfig) {
       await sendWebhook({
         action: 'submit',
         lead: lead,
+        name: lead.name,
+        email: lead.email,
+        company: lead.company,
+        role: lead.role,
+        projectStatus: lead.projectStatus,
+        project_status: lead.projectStatus,
         answers: answers,
         score: calculateScore(),
         timestamp: new Date().toISOString()
@@ -739,8 +745,66 @@ This package contains the standalone, end-user interactive quiz application read
 ## 🌟 Key Features
 - **Pure Standalone App**: Contains **JUST the functional quiz** for visitors (no builder or edit tools).
 - **Responsive & Mobile Ready**: Clean design that adapts to mobile, tablet, and desktop screens.
-- **Lead Collection**: Integrated lead capture form sending submissions directly to your configured Google Webhook URL.
+- **Lead Collection**: Integrated lead capture form sending submissions directly to your configured Google Webhook URL (captures Name, Email, Company, Role, and Workplace Project Status).
 - **Diagnostic Reporting**: Automated scoring (0–100) and instant custom diagnostic reporting with citations.
+
+---
+
+## 📊 Google Apps Script for Google Sheets (Handles all 5 Form Fields)
+
+If connecting to Google Sheets, paste the following Google Apps Script in **Extensions > Apps Script** inside your spreadsheet and deploy as a Web App (Execute as: *Me*, Access: *Anyone*):
+
+\`\`\`javascript
+function doPost(e) {
+  try {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(["Timestamp", "Action", "Full Name", "Work Email", "Company", "Job Title / Role", "Project Status", "Overall Score", "Assessment Requested", "Telephone", "Survey Answers"]);
+      sheet.getRange(1, 1, 1, 11).setFontWeight("bold").setBackground("#F3F4F6");
+    }
+    var data = {};
+    if (e.parameter && e.parameter.payload) {
+      data = JSON.parse(e.parameter.payload);
+    } else if (e.postData && e.postData.contents) {
+      data = JSON.parse(e.postData.contents);
+    } else {
+      data = e.parameter || {};
+    }
+    var lead = data.lead || data || {};
+    var timestamp = data.timestamp || new Date().toISOString();
+    var action = data.action || "submit";
+
+    if (action === "submit") {
+      sheet.appendRow([
+        timestamp,
+        action,
+        lead.name || data.name || "",
+        lead.email || data.email || "",
+        lead.company || data.company || "",
+        lead.role || data.role || "",
+        lead.projectStatus || lead.project_status || data.projectStatus || data.project_status || "",
+        data.score || "",
+        "No",
+        "",
+        JSON.stringify(data.answers || {})
+      ]);
+    } else if (action === "update") {
+      var email = data.email || lead.email || "";
+      var rows = sheet.getDataRange().getValues();
+      for (var i = 1; i < rows.length; i++) {
+        if (rows[i][3] === email) {
+          if (data.assessmentRequested) sheet.getRange(i + 1, 9).setValue("Yes");
+          if (data.tel) sheet.getRange(i + 1, 10).setValue(data.tel);
+          break;
+        }
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+\`\`\`
 
 ---
 
@@ -797,6 +861,12 @@ export function generateLeadPayloadSchema() {
         },
         "required": ["name", "email", "company", "projectStatus"]
       },
+      "name": { "type": "string", "example": "Jane Doe" },
+      "email": { "type": "string", "example": "jane@steelcase.com" },
+      "company": { "type": "string", "example": "Steelcase Inc." },
+      "role": { "type": "string", "example": "Director of Workplace Strategy" },
+      "projectStatus": { "type": "string", "example": "A - Active project, decisions within 6 months" },
+      "project_status": { "type": "string", "example": "A - Active project, decisions within 6 months" },
       "answers": {
         "type": "object",
         "description": "Selected point values or labels keyed by question ID",

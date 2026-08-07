@@ -524,7 +524,19 @@ export default function App() {
 
   const submitToWebhook = async () => {
     setIsSubmitting(true);
-    await submitToGoogle({ action: "submit", lead, answers: getAnswerLabels(), score: scoreData, timestamp: new Date().toISOString() });
+    await submitToGoogle({ 
+      action: "submit", 
+      lead, 
+      name: lead.name,
+      email: lead.email,
+      company: lead.company,
+      role: lead.role,
+      projectStatus: lead.projectStatus,
+      project_status: lead.projectStatus,
+      answers: getAnswerLabels(), 
+      score: scoreData, 
+      timestamp: new Date().toISOString() 
+    });
     setIsSubmitting(false);
     setStep(step + 1);
     generateAiAnalysis();
@@ -1091,7 +1103,126 @@ export default function App() {
                   <input placeholder="https://script.google.com/macros/s/..." value={config.integration.webhookUrl} onChange={e => setConfig({...config, integration: {...config.integration, webhookUrl: e.target.value}})} />
                   <div style={{fontSize:'12px', color:'#059669', marginTop:'6px', display:'flex', alignItems:'center', gap:'4px'}}><CheckCircle2 size={14}/> Settings automatically saved locally</div>
                 </div>
-                <div className="field-group">
+
+                <div style={{ marginTop: '16px', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '16px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#1E293B', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase', marginBottom: '8px' }}>
+                    <FileText size={16} color="#1A73E8" /> Google Apps Script Code (Includes All 5 Lead Fields)
+                  </label>
+                  <p style={{ fontSize: '12px', color: '#64748B', margin: '0 0 10px 0', lineHeight: '1.4' }}>
+                    Copy & paste this script into your Google Sheet (<strong>Extensions &gt; Apps Script</strong>) then deploy as a Web App (Execute as: <em>Me</em>, Access: <em>Anyone</em>):
+                  </p>
+                  <pre style={{ background: '#0F172A', color: '#F8FAFC', padding: '12px', borderRadius: '6px', fontSize: '11px', overflowX: 'auto', maxHeight: '200px', margin: '0 0 10px 0', lineHeight: '1.4' }}>{`function doPost(e) {
+  try {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(["Timestamp", "Action", "Full Name", "Work Email", "Company", "Job Title / Role", "Project Status", "Overall Score", "Assessment Requested", "Telephone", "Survey Answers"]);
+      sheet.getRange(1, 1, 1, 11).setFontWeight("bold").setBackground("#F3F4F6");
+    }
+    var data = {};
+    if (e.parameter && e.parameter.payload) {
+      data = JSON.parse(e.parameter.payload);
+    } else if (e.postData && e.postData.contents) {
+      data = JSON.parse(e.postData.contents);
+    } else {
+      data = e.parameter || {};
+    }
+    var lead = data.lead || data || {};
+    var timestamp = data.timestamp || new Date().toISOString();
+    var action = data.action || "submit";
+
+    if (action === "submit") {
+      sheet.appendRow([
+        timestamp,
+        action,
+        lead.name || data.name || "",
+        lead.email || data.email || "",
+        lead.company || data.company || "",
+        lead.role || data.role || "",
+        lead.projectStatus || lead.project_status || data.projectStatus || data.project_status || "",
+        data.score || "",
+        "No",
+        "",
+        JSON.stringify(data.answers || {})
+      ]);
+    } else if (action === "update") {
+      var email = data.email || lead.email || "";
+      var rows = sheet.getDataRange().getValues();
+      for (var i = 1; i < rows.length; i++) {
+        if (rows[i][3] === email) {
+          if (data.assessmentRequested) sheet.getRange(i + 1, 9).setValue("Yes");
+          if (data.tel) sheet.getRange(i + 1, 10).setValue(data.tel);
+          break;
+        }
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
+  }
+}`}</pre>
+                  <button 
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ fontSize: '11px', padding: '6px 12px', width: '100%', justifyContent: 'center' }}
+                    onClick={() => {
+                      const code = `function doPost(e) {
+  try {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(["Timestamp", "Action", "Full Name", "Work Email", "Company", "Job Title / Role", "Project Status", "Overall Score", "Assessment Requested", "Telephone", "Survey Answers"]);
+      sheet.getRange(1, 1, 1, 11).setFontWeight("bold").setBackground("#F3F4F6");
+    }
+    var data = {};
+    if (e.parameter && e.parameter.payload) {
+      data = JSON.parse(e.parameter.payload);
+    } else if (e.postData && e.postData.contents) {
+      data = JSON.parse(e.postData.contents);
+    } else {
+      data = e.parameter || {};
+    }
+    var lead = data.lead || data || {};
+    var timestamp = data.timestamp || new Date().toISOString();
+    var action = data.action || "submit";
+
+    if (action === "submit") {
+      sheet.appendRow([
+        timestamp,
+        action,
+        lead.name || data.name || "",
+        lead.email || data.email || "",
+        lead.company || data.company || "",
+        lead.role || data.role || "",
+        lead.projectStatus || lead.project_status || data.projectStatus || data.project_status || "",
+        data.score || "",
+        "No",
+        "",
+        JSON.stringify(data.answers || {})
+      ]);
+    } else if (action === "update") {
+      var email = data.email || lead.email || "";
+      var rows = sheet.getDataRange().getValues();
+      for (var i = 1; i < rows.length; i++) {
+        if (rows[i][3] === email) {
+          if (data.assessmentRequested) sheet.getRange(i + 1, 9).setValue("Yes");
+          if (data.tel) sheet.getRange(i + 1, 10).setValue(data.tel);
+          break;
+        }
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
+  }
+}`;
+                      navigator.clipboard.writeText(code);
+                      alert('Google Apps Script code copied to clipboard!');
+                    }}
+                  >
+                    📋 Copy Google Apps Script Code
+                  </button>
+                </div>
+
+                <div className="field-group" style={{ marginTop: '16px' }}>
                   <label>Gemini API Key (For Custom AI Reports)</label>
                   <input placeholder="AIzaSy..." type="password" value={config.integration.geminiApiKey} onChange={e => setConfig({...config, integration: {...config.integration, geminiApiKey: e.target.value}})} />
                   <p style={{fontSize:'12px', color:'#6B7280', marginTop:'8px'}}>Get a free key from Google AI Studio. If provided, the final report will automatically generate a custom analysis using Gemini 3.5 Flash-Lite.</p>
