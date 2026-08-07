@@ -1,0 +1,6 @@
+{
+  "name": "AI Quiz Builder",
+  "description": "Diagnostic tool and interactive quiz builder for AI workplace readiness assessments.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
