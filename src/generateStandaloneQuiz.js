@@ -216,6 +216,11 @@ export function generateStandaloneHtml(rawConfig) {
 <body>
   <div class="preview-area">
     <div class="quiz-shell">
+      ${config.branding && config.branding.logoUrl ? `
+        <div style="margin-bottom:16px; display:flex; justify-content:flex-start; align-items:center;">
+          <img src="${config.branding.logoUrl}" alt="Brand Logo" style="max-height:60px; max-width:280px; object-fit:contain;" />
+        </div>
+      ` : ''}
       <div class="quiz-hero">
         <div>
           <div class="eyebrow" id="hero-eyebrow">📊 Diagnostic Tool</div>
@@ -232,6 +237,20 @@ export function generateStandaloneHtml(rawConfig) {
       <main class="quiz-card" id="quiz-main-card">
         <!-- Rendered dynamically by JavaScript -->
       </main>
+    </div>
+  </div>
+
+  <div id="link-modal-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(17, 24, 39, 0.6); backdrop-filter:blur(4px); z-index:99999; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:white; border-radius:12px; width:100%; max-width:420px; padding:24px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); border:1px solid #E5E7EB; text-align:center;">
+      <div style="width:48px; height:48px; border-radius:50%; background:#EFF6FF; color:#1D4ED8; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:22px;">
+        📄
+      </div>
+      <h3 style="margin:0 0 8px; font-size:18px; font-weight:700; color:#111827;">Link Protected</h3>
+      <p style="margin:0 0 20px; font-size:14px; color:#4B5563; line-height:1.5;">Full link included in PDF download.</p>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-secondary" onclick="hideExternalLinkPopup()" style="flex:1; justify-content:center;">Close</button>
+        <button class="btn btn-primary" onclick="hideExternalLinkPopup(); downloadPdfReport();" style="flex:1; justify-content:center;">📄 Download PDF</button>
+      </div>
     </div>
   </div>
 
@@ -360,7 +379,12 @@ export function generateStandaloneHtml(rawConfig) {
             
             <div>
               <div class="ai-report-box">
-                <div class="ai-header">📊 Custom AI Diagnosis</div>
+                <div class="ai-header" style="display:flex; justify-content:space-between; align-items:center;">
+                  <span>📊 Custom AI Diagnosis</span>
+                  <button class="btn btn-secondary" onclick="downloadPdfReport()" style="font-size:12px; padding:6px 12px; background:white; border-color:#BFDBFE; color:#1D4ED8; cursor:pointer;">
+                    📄 Download PDF Report
+                  </button>
+                </div>
                 <div class="ai-content">\${defaultAiReport}</div>
               </div>
 
@@ -522,20 +546,125 @@ export function generateStandaloneHtml(rawConfig) {
           <li><strong>Acoustically Rated Micro-Pods:</strong> Deploy isolated booths engineered with STC 38+ ratings for voice-based AI prompting and intense individual focus.</li>
           <li><strong>Dynamic Visual Boundaries:</strong> Implement mobile acoustic screens to define project micro-zones and shield confidential screen prompts on demand.</li>
           <li><strong>Micro-Power Drop Topologies:</strong> Deploy flexible ceiling and under-floor power distribution drops to eliminate tethering constraints in agile AI war rooms.</li>
+          <li><strong>Steelcase ARC Guidance:</strong> Explore the <a href="https://swiy.co/Steelcase-4new-Ai-workspaces" target="_blank" rel="noopener noreferrer">Steelcase 4 New AI Workspaces Blueprint</a>, <a href="https://swiy.co/Steelcase-People-Centered-AI-Spaces" target="_blank" rel="noopener noreferrer">People-Centered AI Spaces Research</a>, and <a href="https://swiy.co/Steelcase-community-based-design" target="_blank" rel="noopener noreferrer">Community-Based Design Methodology</a>.</li>
         </ul>
 
         <div class="footnotes-box">
           <h4>📚 Cited Sources & Benchmark Research References</h4>
           <ol class="footnotes-list">
-            <li id="fn-uc-irvine"><strong>UC Irvine / Wall Street Journal Focus Study:</strong> Workplace interruption research demonstrating a 23min 15sec task-switching recovery overhead per interruption ($28,000/employee/year in lost billable productivity).</li>
-            <li id="fn-sap"><strong>SAP Workplace Health Index Benchmark:</strong> Enterprise spatial and well-being study showing each 1% increase in index yields $90M–$100M in annual operating profit gain.</li>
-            <li id="fn-cisco"><strong>Cisco PENN 1 & Osaka Hybrid Workspace Blueprint:</strong> Office redesign achieving a 40% increase in collaboration zones, 13% workstation capacity gain in 36% less footprint, and $1.2M lease/energy savings.</li>
-            <li id="fn-microsoft"><strong>Microsoft Modern AI Workplace Study:</strong> Reengineered AI co-creation workspaces reducing task-switching overhead, eliminating 1.2 hrs/day of redundant sync meetings, and boosting developer velocity by 22%.</li>
-            <li id="fn-flex-agile"><strong>Steelcase Flex Agile Teams Study:</strong> High-performing cross-functional teams equipped with adaptable furniture and spatial reconfigurability are 5x more likely to be high-performing and profitable.</li>
+            <li id="fn-uc-irvine"><strong>UC Irvine / Wall Street Journal Focus Study:</strong> Workplace interruption study demonstrating 23min 15sec task-switching recovery overhead per interruption ($28,000/employee/year in lost billable output). <a href="https://www.ics.uci.edu/~gmark/" target="_blank" rel="noopener noreferrer">UC Irvine Research</a> | <a href="https://www.wsj.com" target="_blank" rel="noopener noreferrer">WSJ Analysis</a></li>
+            <li id="fn-sap"><strong>SAP Workplace Health Index Benchmark:</strong> Enterprise spatial and well-being study showing each 1% increase in index yields $90M–$100M in annual operating profit gain. <a href="https://www.sap.com" target="_blank" rel="noopener noreferrer">SAP Enterprise Study</a></li>
+            <li id="fn-cisco"><strong>Cisco PENN 1 & Osaka Hybrid Workspace Blueprint:</strong> Office redesign achieving a 40% increase in collaboration zones, 13% workstation capacity gain in 36% less footprint, and $1.2M lease/energy savings. <a href="https://www.cisco.com/c/en/us/solutions/hybrid-work/penn-1.html" target="_blank" rel="noopener noreferrer">Cisco PENN 1 Blueprint</a></li>
+            <li id="fn-microsoft"><strong>Microsoft Modern AI Workplace Study:</strong> Reengineered AI co-creation workspaces reducing task-switching overhead, eliminating 1.2 hrs/day of redundant sync meetings, and boosting developer velocity by 22%. <a href="https://www.steelcase.com/research/" target="_blank" rel="noopener noreferrer">Steelcase WorkSpace Research</a></li>
+            <li id="fn-gensler"><strong>Gensler Workplace Index (Acoustic Focus & Retention):</strong> Companies providing high-STC acoustic focus zones exhibit 21% higher cognitive performance scores and 18% lower voluntary turnover. <a href="https://www.gensler.com/gri/global-workplace-survey-2024" target="_blank" rel="noopener noreferrer">Gensler Survey 2024</a></li>
+            <li id="fn-mckinsey"><strong>McKinsey & Company State of AI & Future of Work Report:</strong> Global AI deployment benchmark detailing generative AI productivity curves and spatial collaboration requirements. <a href="https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai" target="_blank" rel="noopener noreferrer">McKinsey AI Report</a></li>
+            <li id="fn-gartner"><strong>Gartner Digital Workplace & Smart Office Analytics:</strong> Analytics on smart office sensors, acoustic isolation, and agile pod density. <a href="https://www.gartner.com/en/information-technology/insights/digital-workplace" target="_blank" rel="noopener noreferrer">Gartner Insights</a></li>
+            <li id="fn-hbr"><strong>Harvard Business Review & BCG Generative AI Productivity Study:</strong> Empirical research on AI-assisted team output, task quality gains, and project velocity acceleration. <a href="https://hbr.org/2023/09/how-ai-will-transform-project-management" target="_blank" rel="noopener noreferrer">HBR Research</a></li>
+            <li id="fn-steelcase-privacy"><strong>Steelcase Privacy & Acoustic Pods Research:</strong> Applied environmental study on acoustic transmission class (STC 38+), speech privacy, and focus recovery in open-plan spaces. <a href="https://www.steelcase.com/research/articles/topics/privacy/" target="_blank" rel="noopener noreferrer">Steelcase Acoustic Privacy Guide</a> | <a href="https://www.steelcase.com/products/flex-collection/" target="_blank" rel="noopener noreferrer">Steelcase Flex Collection</a></li>
           </ol>
         </div>
       \`;
     }
+
+    function downloadPdfReport() {
+      const companyName = escapeHtml(lead.company || 'Organization');
+      const leadNameStr = escapeHtml(lead.name || 'Executive');
+      const leadRoleStr = escapeHtml(lead.role || 'Workplace Leader');
+      const score = calculateScore();
+      const reportHtml = generateStaticAiReport(score, lead.company, lead.name);
+
+      const showLogoInPdf = QUIZ_CONFIG.branding && QUIZ_CONFIG.branding.logoUrl && QUIZ_CONFIG.branding.showLogoInPdf !== false;
+      const logoHtml = showLogoInPdf ? '<div style="margin-bottom:16px;"><img src="' + QUIZ_CONFIG.branding.logoUrl + '" alt="Brand Logo" style="max-height:55px; max-width:240px; object-fit:contain;" /></div>' : '';
+
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) return;
+
+      printWindow.document.write(\`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>\${companyName} - Steelcase ARC AI Diagnostic Report</title>
+            <style>
+              body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #1F2937; line-height: 1.6; max-width: 900px; margin: 0 auto; }
+              .header-banner { border-bottom: 2px solid #1D4ED8; padding-bottom: 20px; margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; }
+              .score-badge { background: #1D4ED8; color: white; padding: 12px 20px; border-radius: 8px; text-align: center; min-width: 120px; }
+              .score-num { font-size: 32px; font-weight: 700; line-height: 1; }
+              .score-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; margin-top: 4px; }
+              h1 { margin: 0 0 8px 0; font-size: 24px; color: #1E3A8A; }
+              .meta { font-size: 13px; color: #4B5563; }
+              .top-insights-box { background: #F0F7FF; border: 1px solid #BFDBFE; border-left: 5px solid #1D4ED8; border-radius: 8px; padding: 20px 24px; margin-bottom: 28px; }
+              .top-insights-box h3 { margin-top: 0; color: #1E3A8A; font-size: 16px; font-weight: 700; }
+              .footnotes-box { margin-top: 36px; padding: 22px 26px; background: #F8FAFC; border: 1px solid #E2E8F0; border-left: 4px solid #2563EB; border-radius: 8px; }
+              .footnotes-box h4 { margin: 0 0 14px 0; font-size: 14px; font-weight: 700; color: #1E3A8A; text-transform: uppercase; }
+              a { color: #1D4ED8; text-decoration: underline; font-weight: 500; }
+              .cite-badge { display: inline-flex; align-items: center; background: #EFF6FF; color: #1D4ED8 !important; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px; border: 1px solid #BFDBFE; text-decoration: none !important; }
+              .print-bar { background: #F3F4F6; padding: 12px 20px; border-radius: 8px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #E5E7EB; }
+              @media print {
+                .no-print { display: none !important; }
+                body { padding: 0; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="print-bar no-print">
+              <span style="font-size: 13px; color: #4B5563;">📄 Printable AI Readiness Diagnostic Report — Save as PDF via browser print</span>
+              <button onclick="window.print()" style="background: #1D4ED8; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">
+                🖨️ Save as PDF
+              </button>
+            </div>
+            
+            <div class="header-banner">
+              <div>
+                \${logoHtml}
+                <h1>Steelcase ARC — AI Workplace Readiness Diagnostic</h1>
+                <div class="meta">
+                  <strong>Client:</strong> \${companyName} &nbsp;|&nbsp; 
+                  <strong>Contact:</strong> \${leadNameStr} (\${leadRoleStr}) &nbsp;|&nbsp; 
+                  <strong>Date:</strong> \${new Date().toLocaleDateString()}
+                </div>
+              </div>
+              <div class="score-badge">
+                <div class="score-num">\${score}</div>
+                <div class="score-lbl">Readiness Score</div>
+              </div>
+            </div>
+
+            <div class="report-content">
+              \${reportHtml}
+            </div>
+
+            <script>
+              window.onload = function() {
+                setTimeout(function() {
+                  window.print();
+                }, 500);
+              };
+            </script>
+          </body>
+        </html>
+      \`);
+      printWindow.document.close();
+    }
+
+    document.addEventListener('click', function(e) {
+      const link = e.target.closest('a');
+      if (link) {
+        const href = link.getAttribute('href');
+        if (href && href.startsWith('#fn-')) {
+          e.preventDefault();
+          const targetId = href.substring(1);
+          const el = document.getElementById(targetId);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const origBg = el.style.backgroundColor;
+            el.style.backgroundColor = '#FEF3C7';
+            el.style.transition = 'background-color 0.5s ease';
+            setTimeout(() => { el.style.backgroundColor = origBg || ''; }, 2000);
+          }
+        }
+      }
+    });
 
     function escapeHtml(str) {
       if (!str) return '';

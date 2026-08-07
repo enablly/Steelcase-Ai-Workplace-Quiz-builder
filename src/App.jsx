@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Settings, Plus, Trash2, CheckCircle2, BarChart2, Mail, Lock, ArrowRight, ArrowLeft, Download, Code, Phone, RefreshCw, Eye, FileText } from 'lucide-react';
+import { Settings, Plus, Trash2, CheckCircle2, BarChart2, Mail, Lock, ArrowRight, ArrowLeft, Download, Code, Phone, RefreshCw, Eye, FileText, Upload, Image } from 'lucide-react';
 import JSZip from 'jszip';
 import { generateStandaloneHtml, generateReadme, generateLeadPayloadSchema } from './generateStandaloneQuiz';
 
@@ -9,6 +9,7 @@ const DEFAULT_CONFIG = {
     bodyColor: '#F1F3F4',
     headerColor: '#3C4043',
     logoUrl: '',
+    showLogoInPdf: true,
   },
   content: {
     eyebrow: 'Executive Diagnostic (V4)',
@@ -298,6 +299,135 @@ export default function App() {
   const [telSent, setTelSent] = useState(false);
 
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showLinkPopup, setShowLinkPopup] = useState(false);
+
+  const handleAiContentClick = (e) => {
+    const link = e.target.closest('a');
+    if (link) {
+      const href = link.getAttribute('href');
+      if (href && href.startsWith('#fn-')) {
+        e.preventDefault();
+        e.stopPropagation();
+        const targetId = href.substring(1);
+        const el = document.getElementById(targetId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const origBg = el.style.backgroundColor;
+          el.style.backgroundColor = '#FEF3C7';
+          el.style.transition = 'background-color 0.5s ease';
+          setTimeout(() => { el.style.backgroundColor = origBg || ''; }, 2000);
+        }
+      } else if (href && (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('//'))) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.open(href, '_blank', 'noopener,noreferrer');
+      }
+    }
+  };
+
+  const handleLogoFileUpload = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      if (file.size > 3 * 1024 * 1024) {
+        alert("File size is larger than 3MB. Please select a smaller logo image.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (uploadEvent) => {
+        if (uploadEvent.target?.result) {
+          setConfig(prev => ({
+            ...prev,
+            branding: {
+              ...prev.branding,
+              logoUrl: uploadEvent.target.result
+            }
+          }));
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const downloadPdfReport = () => {
+    const companyName = lead.company || 'Organization';
+    const leadName = lead.name || 'Executive';
+    const leadRole = lead.role || 'Workplace Leader';
+    
+    const showLogoInPdf = config.branding?.logoUrl && config.branding?.showLogoInPdf !== false;
+    const logoHtml = showLogoInPdf 
+      ? `<div style="margin-bottom: 16px;"><img src="${config.branding.logoUrl}" alt="Brand Logo" style="max-height: 55px; max-width: 240px; object-fit: contain;" /></div>`
+      : '';
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>${companyName} - Steelcase ARC AI Diagnostic Report</title>
+          <style>
+            body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #1F2937; line-height: 1.6; max-width: 900px; margin: 0 auto; }
+            .header-banner { border-bottom: 2px solid #1D4ED8; padding-bottom: 20px; margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; }
+            .score-badge { background: #1D4ED8; color: white; padding: 12px 20px; border-radius: 8px; text-align: center; min-width: 120px; }
+            .score-num { font-size: 32px; font-weight: 700; line-height: 1; }
+            .score-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; margin-top: 4px; }
+            h1 { margin: 0 0 8px 0; font-size: 24px; color: #1E3A8A; }
+            .meta { font-size: 13px; color: #4B5563; }
+            .top-insights-box { background: #F0F7FF; border: 1px solid #BFDBFE; border-left: 5px solid #1D4ED8; border-radius: 8px; padding: 20px 24px; margin-bottom: 28px; }
+            .top-insights-box h3 { margin-top: 0; color: #1E3A8A; font-size: 16px; font-weight: 700; }
+            .footnotes-box { margin-top: 36px; padding: 22px 26px; background: #F8FAFC; border: 1px solid #E2E8F0; border-left: 4px solid #2563EB; border-radius: 8px; }
+            .footnotes-box h4 { margin: 0 0 14px 0; font-size: 14px; font-weight: 700; color: #1E3A8A; text-transform: uppercase; }
+            a { color: #1D4ED8; text-decoration: underline; font-weight: 500; }
+            .cite-badge { display: inline-flex; align-items: center; background: #EFF6FF; color: #1D4ED8 !important; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px; border: 1px solid #BFDBFE; text-decoration: none !important; }
+            .print-bar { background: #F3F4F6; padding: 12px 20px; border-radius: 8px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #E5E7EB; }
+            @media print {
+              .no-print { display: none !important; }
+              body { padding: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-bar no-print">
+            <span style="font-size: 13px; color: #4B5563;">📄 Printable AI Readiness Diagnostic Report — Save as PDF via browser print</span>
+            <button onclick="window.print()" style="background: #1D4ED8; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">
+              🖨️ Save as PDF
+            </button>
+          </div>
+          
+          <div class="header-banner">
+            <div>
+              ${logoHtml}
+              <h1>Steelcase ARC — AI Workplace Readiness Diagnostic</h1>
+              <div class="meta">
+                <strong>Client:</strong> ${companyName} &nbsp;|&nbsp; 
+                <strong>Contact:</strong> ${leadName} (${leadRole}) &nbsp;|&nbsp; 
+                <strong>Date:</strong> ${new Date().toLocaleDateString()}
+              </div>
+            </div>
+            <div class="score-badge">
+              <div class="score-num">${scoreData}</div>
+              <div class="score-lbl">Readiness Score</div>
+            </div>
+          </div>
+
+          <div class="report-content">
+            ${aiReport}
+          </div>
+
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+              }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
   const [isVisitorPreview, setIsVisitorPreview] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('mode') === 'quiz' || params.get('mode') === 'visitor' || params.get('standalone') === 'true';
@@ -647,6 +777,125 @@ export default function App() {
 
           {activeTab === 'theme' && (
             <>
+              {/* Brand Logo Upload Section */}
+              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '16px', marginBottom: '20px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#1F2937', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase' }}>
+                  <Image size={16} color="#1A73E8" /> Brand Logo
+                </label>
+                <p style={{ fontSize: '12px', color: '#6B7280', margin: '0 0 12px 0', lineHeight: 1.4 }}>
+                  Upload your brand logo to display above the quiz header box and in downloadable PDF reports.
+                </p>
+
+                {config.branding?.logoUrl ? (
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justify: 'space-between', 
+                      padding: '12px', 
+                      background: 'white', 
+                      border: '1px solid #D1D5DB', 
+                      borderRadius: '6px' 
+                    }}>
+                      <img 
+                        src={config.branding.logoUrl} 
+                        alt="Uploaded Brand Logo" 
+                        style={{ maxHeight: '44px', maxWidth: '180px', objectFit: 'contain' }} 
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => setConfig(prev => ({
+                          ...prev,
+                          branding: { ...prev.branding, logoUrl: '' }
+                        }))}
+                        style={{ 
+                          background: '#FEE2E2', 
+                          color: '#DC2626', 
+                          border: '1px solid #FCA5A5', 
+                          borderRadius: '6px', 
+                          padding: '6px 12px', 
+                          fontSize: '12px', 
+                          fontWeight: 600, 
+                          cursor: 'pointer', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '4px' 
+                        }}
+                      >
+                        <Trash2 size={14} /> Remove Logo
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ marginBottom: '12px' }}>
+                    <label 
+                      htmlFor="brand-logo-file-input"
+                      style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center', 
+                        justify: 'center', 
+                        gap: '8px', 
+                        padding: '18px', 
+                        background: 'white', 
+                        border: '2px dashed #9CA3AF', 
+                        borderRadius: '6px', 
+                        cursor: 'pointer', 
+                        textAlign: 'center' 
+                      }}
+                    >
+                      <Upload size={22} color="#1A73E8" />
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: '#1A73E8', textTransform: 'none' }}>
+                        Click to upload brand logo image
+                      </span>
+                      <span style={{ fontSize: '11px', color: '#9CA3AF', textTransform: 'none' }}>
+                        PNG, JPG, SVG or WebP
+                      </span>
+                    </label>
+                    <input 
+                      id="brand-logo-file-input"
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleLogoFileUpload}
+                      style={{ display: 'none' }}
+                    />
+                  </div>
+                )}
+
+                <div style={{ marginTop: '8px' }}>
+                  <label style={{ fontSize: '11px', color: '#6B7280', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>
+                    Or Image URL
+                  </label>
+                  <input 
+                    type="text" 
+                    placeholder="https://example.com/logo.png" 
+                    value={config.branding?.logoUrl || ''} 
+                    onChange={e => setConfig(prev => ({
+                      ...prev,
+                      branding: { ...prev.branding, logoUrl: e.target.value }
+                    }))} 
+                    style={{ fontSize: '13px' }}
+                  />
+                </div>
+
+                {/* PDF Toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #E5E7EB' }}>
+                  <input 
+                    type="checkbox" 
+                    id="showLogoInPdfToggle"
+                    checked={config.branding?.showLogoInPdf !== false} 
+                    onChange={e => setConfig(prev => ({
+                      ...prev,
+                      branding: { ...prev.branding, showLogoInPdf: e.target.checked }
+                    }))}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#1A73E8' }}
+                  />
+                  <label htmlFor="showLogoInPdfToggle" style={{ fontSize: '13px', fontWeight: 600, color: '#374151', cursor: 'pointer', margin: 0, textTransform: 'none' }}>
+                    Include brand logo in PDF download
+                  </label>
+                </div>
+              </div>
+
               <div className="field-group">
                 <label>Primary Brand Color</label>
                 <input type="color" value={config.branding.primaryColor} onChange={e => setConfig({...config, branding: {...config.branding, primaryColor: e.target.value}})} style={{padding: '2px', height: '40px'}} />
@@ -834,6 +1083,15 @@ export default function App() {
       {/* PREVIEW AREA */}
       <div className="preview-area" style={{ '--bg-page': config.branding.bodyColor, '--primary-color': config.branding.primaryColor, '--header-bg': config.branding.headerColor }}>
         <div className="quiz-shell">
+          {config.branding?.logoUrl && (
+            <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+              <img 
+                src={config.branding.logoUrl} 
+                alt="Brand Logo" 
+                style={{ maxHeight: '60px', maxWidth: '280px', objectFit: 'contain' }} 
+              />
+            </div>
+          )}
           <div className="quiz-hero">
             <div>
               <div className="eyebrow"><BarChart2 size={14} style={{marginRight: 6}} /> {config.content.eyebrow}</div>
@@ -903,55 +1161,64 @@ export default function App() {
                 </div>
                 
                 <div>
-                  {activeApiKey && (
-                    <div className="ai-report-box" style={{marginTop:0, marginBottom: 24}}>
-                      <div className="ai-header"><BarChart2 size={20}/> Custom AI Diagnosis</div>
-                      {isGeneratingAI ? (
-                        <div style={{ padding: '20px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', borderBottom: '1px solid #E2E8F0', paddingBottom: '12px' }}>
-                            <div className="spinner" style={{ width: 20, height: 20, border: '3px solid #BFDBFE', borderTopColor: '#1D4ED8', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
-                            <div>
-                              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1E3A8A' }}>Steelcase ARC AI Engine Working...</h4>
-                              <span style={{ fontSize: '12px', color: '#64748B' }}>Synthesizing web research & spatial metrics</span>
-                            </div>
-                          </div>
-                          
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {thinkingSteps.map((stepText, idx) => {
-                              const isPast = idx < thinkingStepIndex;
-                              const isCurrent = idx === thinkingStepIndex;
-                              return (
-                                <div key={idx} style={{ 
-                                  display: 'flex', 
-                                  alignItems: 'center', 
-                                  gap: '10px', 
-                                  fontSize: '13px', 
-                                  color: isCurrent ? '#1D4ED8' : isPast ? '#059669' : '#94A3B8',
-                                  fontWeight: isCurrent ? 600 : 400,
-                                  transition: 'all 0.3s ease',
-                                  padding: '8px 12px',
-                                  background: isCurrent ? '#EFF6FF' : isPast ? '#F0FDF4' : 'transparent',
-                                  borderRadius: '6px',
-                                  border: isCurrent ? '1px solid #BFDBFE' : '1px solid transparent'
-                                }}>
-                                  {isPast ? (
-                                    <CheckCircle2 size={16} color="#059669" />
-                                  ) : isCurrent ? (
-                                    <div className="spinner" style={{ width: 14, height: 14, border: '2px solid #93C5FD', borderTopColor: '#1D4ED8', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
-                                  ) : (
-                                    <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid #CBD5E1' }}></div>
-                                  )}
-                                  <span>{stepText}</span>
-                                </div>
-                              );
-                            })}
+                  <div className="ai-report-box" style={{marginTop:0, marginBottom: 24}}>
+                    <div className="ai-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <BarChart2 size={20}/> Custom AI Diagnosis
+                      </span>
+                      <button 
+                        className="btn btn-secondary" 
+                        onClick={downloadPdfReport} 
+                        style={{ fontSize: '12px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px', background: 'white', borderColor: '#BFDBFE', color: '#1D4ED8', cursor: 'pointer' }}
+                      >
+                        <FileText size={14} /> Download PDF Report
+                      </button>
+                    </div>
+                    {isGeneratingAI ? (
+                      <div style={{ padding: '20px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', borderBottom: '1px solid #E2E8F0', paddingBottom: '12px' }}>
+                          <div className="spinner" style={{ width: 20, height: 20, border: '3px solid #BFDBFE', borderTopColor: '#1D4ED8', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
+                          <div>
+                            <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1E3A8A' }}>Steelcase ARC AI Engine Working...</h4>
+                            <span style={{ fontSize: '12px', color: '#64748B' }}>Synthesizing web research & spatial metrics</span>
                           </div>
                         </div>
-                      ) : (
-                        <div className="ai-content" dangerouslySetInnerHTML={{__html: aiReport}} />
-                      )}
-                    </div>
-                  )}
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          {thinkingSteps.map((stepText, idx) => {
+                            const isPast = idx < thinkingStepIndex;
+                            const isCurrent = idx === thinkingStepIndex;
+                            return (
+                              <div key={idx} style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '10px', 
+                                fontSize: '13px', 
+                                color: isCurrent ? '#1D4ED8' : isPast ? '#059669' : '#94A3B8',
+                                fontWeight: isCurrent ? 600 : 400,
+                                transition: 'all 0.3s ease',
+                                padding: '8px 12px',
+                                background: isCurrent ? '#EFF6FF' : isPast ? '#F0FDF4' : 'transparent',
+                                borderRadius: '6px',
+                                border: isCurrent ? '1px solid #BFDBFE' : '1px solid transparent'
+                              }}>
+                                {isPast ? (
+                                  <CheckCircle2 size={16} color="#059669" />
+                                ) : isCurrent ? (
+                                  <div className="spinner" style={{ width: 14, height: 14, border: '2px solid #93C5FD', borderTopColor: '#1D4ED8', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
+                                ) : (
+                                  <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid #CBD5E1' }}></div>
+                                )}
+                                <span>{stepText}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="ai-content" onClick={handleAiContentClick} dangerouslySetInnerHTML={{__html: aiReport}} />
+                    )}
+                  </div>
                   
                   <div style={{padding:'24px', background:'#F8F9FA', borderRadius:'8px', border:'1px solid #DADCE0'}}>
                     <h4 style={{margin:'0 0 8px', fontSize:'16px'}}>Professional Assessment</h4>
@@ -1101,6 +1368,38 @@ export default function App() {
 
             <div style={{marginTop:20, textAlign:'right'}}>
               <button className="btn btn-secondary" onClick={() => setShowExportModal(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showLinkPopup && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(17, 24, 39, 0.6)', backdropFilter: 'blur(4px)',
+          zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+        }}>
+          <div style={{
+            background: 'white', borderRadius: '12px', width: '100%', maxWidth: '420px', padding: '24px',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', border: '1px solid #E5E7EB', textAlign: 'center'
+          }}>
+            <div style={{
+              width: '48px', height: '48px', borderRadius: '50%', background: '#EFF6FF', color: '#1D4ED8',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '22px'
+            }}>
+              <FileText size={24} color="#1D4ED8" />
+            </div>
+            <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 700, color: '#111827' }}>Link Protected</h3>
+            <p style={{ margin: '0 0 20px', fontSize: '14px', color: '#4B5563', lineHeight: 1.5 }}>
+              Full link included in PDF download.
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button className="btn btn-secondary" onClick={() => setShowLinkPopup(false)} style={{ flex: 1, justifyContent: 'center' }}>
+                Close
+              </button>
+              <button className="btn btn-primary" onClick={() => { setShowLinkPopup(false); downloadPdfReport(); }} style={{ flex: 1, justifyContent: 'center' }}>
+                <FileText size={16} /> Download PDF
+              </button>
             </div>
           </div>
         </div>
