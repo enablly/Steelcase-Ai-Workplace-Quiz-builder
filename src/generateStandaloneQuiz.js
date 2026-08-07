@@ -647,6 +647,16 @@ export function generateStandaloneHtml(rawConfig) {
       printWindow.document.close();
     }
 
+    function hideExternalLinkPopup() {
+      const modal = document.getElementById('link-modal-overlay');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function showExternalLinkPopup() {
+      const modal = document.getElementById('link-modal-overlay');
+      if (modal) modal.style.display = 'flex';
+    }
+
     document.addEventListener('click', function(e) {
       const link = e.target.closest('a');
       if (link) {
@@ -662,6 +672,9 @@ export function generateStandaloneHtml(rawConfig) {
             el.style.transition = 'background-color 0.5s ease';
             setTimeout(() => { el.style.backgroundColor = origBg || ''; }, 2000);
           }
+        } else if (href && (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('//'))) {
+          e.preventDefault();
+          showExternalLinkPopup();
         }
       }
     });
