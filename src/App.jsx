@@ -1508,7 +1508,7 @@ export default function App() {
                       const selected = answers[q.id] === opt.value;
                       return (
                         <button key={opt.label} onClick={() => handleAnswer(opt.value)} className={`option-btn ${selected ? 'selected' : ''}`}>
-                          <span>{opt.label} (<b>{opt.value} pts</b>)</span>
+                          <span>{opt.label}</span>
                           {selected && <CheckCircle2 size={18} />}
                         </button>
                       );

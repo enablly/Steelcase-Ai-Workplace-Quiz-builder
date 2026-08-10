@@ -348,7 +348,7 @@ export function generateStandaloneHtml(rawConfig) {
           const selected = answers[q.id] === opt.value;
           optionsHtml += \`
             <button class="option-btn \${selected ? 'selected' : ''}" onclick="selectAnswer('\${q.id}', \${opt.value})">
-              <span>\${escapeHtml(opt.label)} (<b>\${opt.value} pts</b>)</span>
+              <span>\${escapeHtml(opt.label)}</span>
               \${selected ? '<span style="color:var(--primary-color)">✓</span>' : ''}
             </button>
           \`;
