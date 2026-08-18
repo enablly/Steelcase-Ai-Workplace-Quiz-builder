@@ -1615,6 +1615,9 @@ export default function App() {
                   </div>
 
                   <div style={{padding:'24px', background:'#F8F9FA', borderRadius:'8px', border:'1px solid #DADCE0'}}>
+                    <div style={{fontSize:'11px', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.04em', color:'#059669', marginBottom:'8px', display:'flex', alignItems:'center', gap:'6px'}}>
+                      <CheckCircle2 size={14} color="#059669" /> Congratulations! You Qualify for an Executive Strategy Consultation
+                    </div>
                     <h4 style={{margin:'0 0 8px', fontSize:'16px'}}>Professional Assessment</h4>
                     <p style={{fontSize:'13px', color:'#5F6368', margin:'0 0 16px'}}>Schedule a deep-dive session with a workplace strategy specialist.</p>
                     

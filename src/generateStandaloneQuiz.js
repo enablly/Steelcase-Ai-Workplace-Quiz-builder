@@ -436,6 +436,9 @@ export function generateStandaloneHtml(rawConfig) {
               </div>
 
               <div style="padding:24px; background:#F8F9FA; border-radius:8px; border:1px solid #DADCE0;">
+                <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#059669; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+                  ✓ Congratulations! You Qualify for an Executive Strategy Consultation
+                </div>
                 <h4 style="margin:0 0 8px; font-size:16px;">Professional Assessment</h4>
                 <p style="font-size:13px; color:#5F6368; margin:0 0 16px;">Schedule a deep-dive session with a workplace strategy specialist.</p>
                 
