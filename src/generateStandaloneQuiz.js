@@ -427,24 +427,12 @@ export function generateStandaloneHtml(rawConfig) {
         mainCard.innerHTML = \`
           <div class="result-grid">
             <div>
-              <div class="result-panel" style="background-color: \${activeRes.color}">
+              <div class="result-panel" style="background-color: \${activeRes.color}; margin-bottom: 24px;">
                 <div style="font-size:12px; font-weight:600; text-transform:uppercase;">\${escapeHtml(activeRes.tone)}</div>
                 <div class="score-display">\${score}</div>
                 <div style="font-size:12px; font-weight:600;">OUT OF 100</div>
                 <h2>\${escapeHtml(activeRes.title)}</h2>
                 <p style="font-size:14px; line-height:1.6;">\${escapeHtml(activeRes.desc)}</p>
-              </div>
-            </div>
-            
-            <div>
-              <div class="ai-report-box">
-                <div class="ai-header" style="display:flex; justify-content:space-between; align-items:center;">
-                  <span>📊 Custom AI Diagnosis</span>
-                  <button class="btn btn-secondary" onclick="downloadPdfReport()" style="font-size:12px; padding:6px 12px; background:white; border-color:#BFDBFE; color:#1D4ED8; cursor:pointer;">
-                    📄 Download PDF Report
-                  </button>
-                </div>
-                <div class="ai-content">\${defaultAiReport}</div>
               </div>
 
               <div style="padding:24px; background:#F8F9FA; border-radius:8px; border:1px solid #DADCE0;">
@@ -468,6 +456,18 @@ export function generateStandaloneHtml(rawConfig) {
                 <div style="font-size:12px; color:#059669; display:flex; align-items:center; gap:6px; justify-content:center; margin-top:12px;">
                   ✓ Qualified for Consultation
                 </div>
+              </div>
+            </div>
+            
+            <div>
+              <div class="ai-report-box" style="margin-top:0;">
+                <div class="ai-header" style="display:flex; justify-content:space-between; align-items:center;">
+                  <span>📊 Custom AI Diagnosis</span>
+                  <button class="btn btn-secondary" onclick="downloadPdfReport()" style="font-size:12px; padding:6px 12px; background:white; border-color:#BFDBFE; color:#1D4ED8; cursor:pointer;">
+                    📄 Download PDF Report
+                  </button>
+                </div>
+                <div class="ai-content">\${defaultAiReport}</div>
               </div>
             </div>
           </div>

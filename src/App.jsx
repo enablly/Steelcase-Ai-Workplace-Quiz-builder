@@ -1606,17 +1606,48 @@ export default function App() {
             {isResultStep && (
               <div className="result-grid">
                 <div>
-                  <div className="result-panel" style={{backgroundColor: activeResult.color}}>
+                  <div className="result-panel" style={{backgroundColor: activeResult.color, marginBottom: '24px'}}>
                     <div style={{fontSize:'12px', fontWeight:600, textTransform:'uppercase'}}>{activeResult.tone}</div>
                     <div className="score-display">{scoreData}</div>
                     <div style={{fontSize:'12px', fontWeight:600}}>OUT OF 100</div>
                     <h2>{activeResult.title}</h2>
                     <p style={{fontSize:'14px', lineHeight:'1.6'}}>{activeResult.desc}</p>
                   </div>
+
+                  <div style={{padding:'24px', background:'#F8F9FA', borderRadius:'8px', border:'1px solid #DADCE0'}}>
+                    <h4 style={{margin:'0 0 8px', fontSize:'16px'}}>Professional Assessment</h4>
+                    <p style={{fontSize:'13px', color:'#5F6368', margin:'0 0 16px'}}>Schedule a deep-dive session with a workplace strategy specialist.</p>
+                    
+                    <button 
+                      className="btn btn-primary" 
+                      onClick={requestAssessment}
+                      disabled={applied}
+                      style={{width: '100%', justifyContent: 'center', marginBottom: 12, backgroundColor: applied ? '#9CA3AF' : 'var(--primary-color)'}}
+                    >
+                      <Mail size={16}/> {applied ? "Request Sent" : "Apply Now"}
+                    </button>
+                    
+                    {applied && !telSent && (
+                      <div style={{background:'white', padding:16, border:'1px solid #E5E7EB', borderRadius:6, marginTop:12}}>
+                        <label style={{fontSize:12, fontWeight:600, display:'block', marginBottom:8}}>Add Telephone (Optional)</label>
+                        <div style={{display:'flex', gap:8}}>
+                          <input type="tel" placeholder="+1..." value={tel} onChange={e=>setTel(e.target.value)} style={{flex:1, padding:'8px 12px', border:'1px solid #D1D5DB', borderRadius:4}} />
+                          <button onClick={submitTel} className="btn btn-secondary" style={{padding:'8px 12px'}}>Send</button>
+                        </div>
+                      </div>
+                    )}
+                    {telSent && (
+                      <div style={{fontSize:13, color:'#059669', display:'flex', alignItems:'center', gap:6, marginTop:8}}><CheckCircle2 size={14}/> Phone saved</div>
+                    )}
+                    
+                    <div style={{fontSize:12, color:'#059669', display:'flex', alignItems:'center', gap:6, justifyContent:'center', marginTop:12}}>
+                      <CheckCircle2 size={14}/> Qualified for Consultation
+                    </div>
+                  </div>
                 </div>
                 
                 <div>
-                  <div className="ai-report-box" style={{marginTop:0, marginBottom: 24}}>
+                  <div className="ai-report-box" style={{marginTop:0}}>
                     <div className="ai-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <BarChart2 size={20}/> Custom AI Diagnosis
@@ -1673,37 +1704,6 @@ export default function App() {
                     ) : (
                       <div className="ai-content" onClick={handleAiContentClick} dangerouslySetInnerHTML={{__html: aiReport}} />
                     )}
-                  </div>
-                  
-                  <div style={{padding:'24px', background:'#F8F9FA', borderRadius:'8px', border:'1px solid #DADCE0'}}>
-                    <h4 style={{margin:'0 0 8px', fontSize:'16px'}}>Professional Assessment</h4>
-                    <p style={{fontSize:'13px', color:'#5F6368', margin:'0 0 16px'}}>Schedule a deep-dive session with a workplace strategy specialist.</p>
-                    
-                    <button 
-                      className="btn btn-primary" 
-                      onClick={requestAssessment}
-                      disabled={applied}
-                      style={{width: '100%', justifyContent: 'center', marginBottom: 12, backgroundColor: applied ? '#9CA3AF' : 'var(--primary-color)'}}
-                    >
-                      <Mail size={16}/> {applied ? "Request Sent" : "Apply Now"}
-                    </button>
-                    
-                    {applied && !telSent && (
-                      <div style={{background:'white', padding:16, border:'1px solid #E5E7EB', borderRadius:6, marginTop:12}}>
-                        <label style={{fontSize:12, fontWeight:600, display:'block', marginBottom:8}}>Add Telephone (Optional)</label>
-                        <div style={{display:'flex', gap:8}}>
-                          <input type="tel" placeholder="+1..." value={tel} onChange={e=>setTel(e.target.value)} style={{flex:1, padding:'8px 12px', border:'1px solid #D1D5DB', borderRadius:4}} />
-                          <button onClick={submitTel} className="btn btn-secondary" style={{padding:'8px 12px'}}>Send</button>
-                        </div>
-                      </div>
-                    )}
-                    {telSent && (
-                      <div style={{fontSize:13, color:'#059669', display:'flex', alignItems:'center', gap:6, marginTop:8}}><CheckCircle2 size={14}/> Phone saved</div>
-                    )}
-                    
-                    <div style={{fontSize:12, color:'#059669', display:'flex', alignItems:'center', gap:6, justifyContent:'center', marginTop:12}}>
-                      <CheckCircle2 size={14}/> Qualified for Consultation
-                    </div>
                   </div>
                 </div>
               </div>
