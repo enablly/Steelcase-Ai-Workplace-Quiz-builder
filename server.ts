@@ -92,11 +92,14 @@ CRITICAL REQUIREMENT ON CITATIONS, CITED SOURCES & FOOTNOTES:
     <li id="fn-sap"><strong>SAP Workplace Health Index Benchmark:</strong> Enterprise spatial and well-being study showing each 1% increase in index yields $90M–$100M in annual operating profit gain. <a href="https://www.sap.com" target="_blank" rel="noopener noreferrer">SAP Enterprise Study</a></li>
     <li id="fn-cisco"><strong>Cisco PENN 1 & Osaka Hybrid Workspace Blueprint:</strong> Office redesign achieving a 40% increase in collaboration zones, 13% workstation capacity gain in 36% less footprint, and $1.2M lease/energy savings. <a href="https://www.cisco.com/c/en/us/solutions/hybrid-work/penn-1.html" target="_blank" rel="noopener noreferrer">Cisco PENN 1 Blueprint</a></li>
     <li id="fn-microsoft"><strong>Microsoft Modern AI Workplace Study:</strong> Reengineered AI co-creation workspaces reducing task-switching overhead, eliminating 1.2 hrs/day of redundant sync meetings, and boosting developer velocity by 22%. <a href="https://www.steelcase.com/research/" target="_blank" rel="noopener noreferrer">Steelcase WorkSpace Research</a></li>
-    <li id="fn-gensler"><strong>Gensler Workplace Index (Acoustic Focus & Retention):</strong> Companies providing high-STC acoustic focus zones exhibit 21% higher cognitive performance scores and 18% lower voluntary turnover. <a href="https://www.gensler.com/gri/global-workplace-survey-2024" target="_blank" rel="noopener noreferrer">Gensler Survey 2024</a></li>
+    <li id="fn-gensler"><strong>Gensler Workplace Index (Acoustic Focus & Retention):</strong> Companies providing high-STC acoustic focus zones exhibit 21% higher cognitive performance scores and 18% lower voluntary turnover. <a href="https://www.gensler.com/gri/global-workplace-survey-2024" target="_blank" rel="noopener noreferrer">Gensler Survey</a></li>
+    <li id="fn-paris-worklife"><strong>Steelcase Paris WorkLife Hybrid Lab:</strong> Technology-enabled video and acoustic focus pods resulting in a 13% direct gain in daily productivity and a 28% increase in workplace satisfaction. <a href="https://www.steelcase.com/research/articles/topics/hybrid-work/" target="_blank" rel="noopener noreferrer">Steelcase Hybrid Work Lab</a></li>
+    <li id="fn-iima"><strong>IIMA Ventures Startup Accelerator Case Study:</strong> Steelcase morphable Maker Labs and mobile acoustic boundaries enabled a 35% acceleration in product iteration cycles. <a href="https://swiy.co/Steelcase-community-based-design" target="_blank" rel="noopener noreferrer">Community-Based Design Case Study</a></li>
+    <li id="fn-flex-agile"><strong>Steelcase Flex Agile Teams Study:</strong> High-performing cross-functional teams equipped with adaptable furniture and spatial reconfigurability are 5x more likely to be high-performing and profitable. <a href="https://www.steelcase.com/research/articles/topics/privacy/" target="_blank" rel="noopener noreferrer">Steelcase Flex Agile Teams Study</a></li>
     <li id="fn-mckinsey"><strong>McKinsey & Company State of AI & Future of Work Report:</strong> Global AI deployment benchmark detailing generative AI productivity curves and spatial collaboration requirements. <a href="https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai" target="_blank" rel="noopener noreferrer">McKinsey AI Report</a></li>
-    <li id="fn-gartner"><strong>Gartner Digital Workplace & Smart Office Analytics:</strong> Analytics on smart office sensors, acoustic isolation, and agile pod density. <a href="https://www.gartner.com/en/information-technology/insights/digital-workplace" target="_blank" rel="noopener noreferrer">Gartner Insights</a></li>
-    <li id="fn-hbr"><strong>Harvard Business Review & BCG Generative AI Productivity Study:</strong> Empirical research on AI-assisted team output, task quality gains, and project velocity acceleration. <a href="https://hbr.org/2023/09/how-ai-will-transform-project-management" target="_blank" rel="noopener noreferrer">HBR Research</a></li>
-    <li id="fn-steelcase-privacy"><strong>Steelcase Privacy & Acoustic Pods Research:</strong> Applied environmental study on acoustic transmission class (STC 38+), speech privacy, and focus recovery in open-plan spaces. <a href="https://www.steelcase.com/research/articles/topics/privacy/" target="_blank" rel="noopener noreferrer">Steelcase Acoustic Privacy Guide</a> | <a href="https://www.steelcase.com/products/flex-collection/" target="_blank" rel="noopener noreferrer">Steelcase Flex Collection</a></li>
+    <li id="fn-gartner"><strong>Gartner Digital Workplace & Smart Office Analytics:</strong> Analytics on smart office sensors, acoustic isolation, and agile pod density. <a href="https://www.gartner.com/en/information-technology/insights/digital-workplace" target="_blank" rel="noopener noreferrer">Gartner Digital Workplace</a></li>
+    <li id="fn-hbr"><strong>Harvard Business Review & BCG Generative AI Productivity Study:</strong> Empirical research on AI-assisted team output, task quality gains, and project velocity acceleration. <a href="https://hbr.org/topic/subject/ai-and-machine-learning" target="_blank" rel="noopener noreferrer">HBR AI Research</a></li>
+    <li id="fn-steelcase-privacy"><strong>Steelcase Privacy & Acoustic Pods Research:</strong> Applied environmental study on acoustic transmission class (STC 38+), speech privacy, and focus recovery in open-plan spaces. <a href="https://www.steelcase.com/research/articles/topics/privacy/" target="_blank" rel="noopener noreferrer">Steelcase Acoustic Privacy Guide</a> | <a href="https://www.steelcase.com/products/" target="_blank" rel="noopener noreferrer">Steelcase Products</a></li>
   </ol>
 </div>
 
@@ -264,11 +267,14 @@ FORMAT REQUIREMENTS:
     <li id="fn-sap"><strong>SAP Workplace Health Index Benchmark:</strong> Enterprise spatial and well-being study showing each 1% increase in index yields $90M–$100M in annual operating profit gain. <a href="https://www.sap.com" target="_blank" rel="noopener noreferrer">SAP Enterprise Study</a></li>
     <li id="fn-cisco"><strong>Cisco PENN 1 & Osaka Hybrid Workspace Blueprint:</strong> Office redesign achieving a 40% increase in collaboration zones, 13% workstation capacity gain in 36% less footprint, and $1.2M lease/energy savings. <a href="https://www.cisco.com/c/en/us/solutions/hybrid-work/penn-1.html" target="_blank" rel="noopener noreferrer">Cisco PENN 1 Blueprint</a></li>
     <li id="fn-microsoft"><strong>Microsoft Modern AI Workplace Study:</strong> Reengineered AI co-creation workspaces reducing task-switching overhead, eliminating 1.2 hrs/day of redundant sync meetings, and boosting developer velocity by 22%. <a href="https://www.steelcase.com/research/" target="_blank" rel="noopener noreferrer">Steelcase WorkSpace Research</a></li>
-    <li id="fn-gensler"><strong>Gensler Workplace Index (Acoustic Focus & Retention):</strong> Companies providing high-STC acoustic focus zones exhibit 21% higher cognitive performance scores and 18% lower voluntary turnover. <a href="https://www.gensler.com/gri/global-workplace-survey-2024" target="_blank" rel="noopener noreferrer">Gensler Survey 2024</a></li>
+    <li id="fn-gensler"><strong>Gensler Workplace Index (Acoustic Focus & Retention):</strong> Companies providing high-STC acoustic focus zones exhibit 21% higher cognitive performance scores and 18% lower voluntary turnover. <a href="https://www.gensler.com/gri/global-workplace-survey-2024" target="_blank" rel="noopener noreferrer">Gensler Survey</a></li>
+    <li id="fn-paris-worklife"><strong>Steelcase Paris WorkLife Hybrid Lab:</strong> Technology-enabled video and acoustic focus pods resulting in a 13% direct gain in daily productivity and a 28% increase in workplace satisfaction. <a href="https://www.steelcase.com/research/articles/topics/hybrid-work/" target="_blank" rel="noopener noreferrer">Steelcase Hybrid Work Lab</a></li>
+    <li id="fn-iima"><strong>IIMA Ventures Startup Accelerator Case Study:</strong> Steelcase morphable Maker Labs and mobile acoustic boundaries enabled a 35% acceleration in product iteration cycles. <a href="https://swiy.co/Steelcase-community-based-design" target="_blank" rel="noopener noreferrer">Community-Based Design Case Study</a></li>
+    <li id="fn-flex-agile"><strong>Steelcase Flex Agile Teams Study:</strong> High-performing cross-functional teams equipped with adaptable furniture and spatial reconfigurability are 5x more likely to be high-performing and profitable. <a href="https://www.steelcase.com/research/articles/topics/privacy/" target="_blank" rel="noopener noreferrer">Steelcase Flex Agile Teams Study</a></li>
     <li id="fn-mckinsey"><strong>McKinsey & Company State of AI & Future of Work Report:</strong> Global AI deployment benchmark detailing generative AI productivity curves and spatial collaboration requirements. <a href="https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai" target="_blank" rel="noopener noreferrer">McKinsey AI Report</a></li>
-    <li id="fn-gartner"><strong>Gartner Digital Workplace & Smart Office Analytics:</strong> Analytics on smart office sensors, acoustic isolation, and agile pod density. <a href="https://www.gartner.com/en/information-technology/insights/digital-workplace" target="_blank" rel="noopener noreferrer">Gartner Insights</a></li>
-    <li id="fn-hbr"><strong>Harvard Business Review & BCG Generative AI Productivity Study:</strong> Empirical research on AI-assisted team output, task quality gains, and project velocity acceleration. <a href="https://hbr.org/2023/09/how-ai-will-transform-project-management" target="_blank" rel="noopener noreferrer">HBR Research</a></li>
-    <li id="fn-steelcase-privacy"><strong>Steelcase Privacy & Acoustic Pods Research:</strong> Applied environmental study on acoustic transmission class (STC 38+), speech privacy, and focus recovery in open-plan spaces. <a href="https://www.steelcase.com/research/articles/topics/privacy/" target="_blank" rel="noopener noreferrer">Steelcase Acoustic Privacy Guide</a> | <a href="https://www.steelcase.com/products/flex-collection/" target="_blank" rel="noopener noreferrer">Steelcase Flex Collection</a></li>
+    <li id="fn-gartner"><strong>Gartner Digital Workplace & Smart Office Analytics:</strong> Analytics on smart office sensors, acoustic isolation, and agile pod density. <a href="https://www.gartner.com/en/information-technology/insights/digital-workplace" target="_blank" rel="noopener noreferrer">Gartner Digital Workplace</a></li>
+    <li id="fn-hbr"><strong>Harvard Business Review & BCG Generative AI Productivity Study:</strong> Empirical research on AI-assisted team output, task quality gains, and project velocity acceleration. <a href="https://hbr.org/topic/subject/ai-and-machine-learning" target="_blank" rel="noopener noreferrer">HBR AI Research</a></li>
+    <li id="fn-steelcase-privacy"><strong>Steelcase Privacy & Acoustic Pods Research:</strong> Applied environmental study on acoustic transmission class (STC 38+), speech privacy, and focus recovery in open-plan spaces. <a href="https://www.steelcase.com/research/articles/topics/privacy/" target="_blank" rel="noopener noreferrer">Steelcase Acoustic Privacy Guide</a> | <a href="https://www.steelcase.com/products/" target="_blank" rel="noopener noreferrer">Steelcase Products</a></li>
   </ol>
 </div>
         `;
@@ -281,6 +287,105 @@ FORMAT REQUIREMENTS:
     } catch (error: any) {
       console.error("AI Analysis Error:", error);
       res.status(500).json({ error: error.message || "Failed to generate AI analysis." });
+    }
+  });
+
+  // 1-Click Publish to GitHub (HQ)
+  app.post("/api/publish-github", async (req, res) => {
+    try {
+      const { token, repo, branch = "main", filePath = "index.html", content, commitMessage } = req.body;
+
+      if (!token) {
+        return res.status(400).json({ error: "GitHub Personal Access Token is required." });
+      }
+      if (!repo || !repo.includes("/")) {
+        return res.status(400).json({ error: "Repository must be in 'owner/repo' format (e.g., username/hosted-quiz)." });
+      }
+      if (!content) {
+        return res.status(400).json({ error: "No file content provided to publish." });
+      }
+
+      const cleanRepo = repo.trim().replace(/^https?:\/\/github\.com\//i, '').replace(/\.git$/i, '');
+      const [owner, repoName] = cleanRepo.split("/");
+      const cleanBranch = (branch || "main").trim();
+      const cleanPath = (filePath || "index.html").trim().replace(/^\/+/, "");
+      const message = commitMessage || `Publish Hosted Quiz v3.3 via Quiz Builder (${new Date().toLocaleDateString()})`;
+
+      // 1. Check if the file already exists on the target branch to retrieve its SHA
+      let fileSha: string | undefined;
+      const getFileUrl = `https://api.github.com/repos/${owner}/${repoName}/contents/${cleanPath}?ref=${encodeURIComponent(cleanBranch)}`;
+      
+      const getResponse = await fetch(getFileUrl, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token.trim()}`,
+          "Accept": "application/vnd.github.v3+json",
+          "User-Agent": "QuizBuilder-HQ-Publisher",
+        },
+      });
+
+      if (getResponse.ok) {
+        const data: any = await getResponse.json();
+        fileSha = data.sha;
+      } else if (getResponse.status === 401) {
+        return res.status(401).json({ error: "Invalid GitHub Personal Access Token. Please verify token permissions." });
+      } else if (getResponse.status === 403) {
+        const errData: any = await getResponse.json().catch(() => ({}));
+        return res.status(403).json({ error: errData.message || "Permission denied. Ensure your token has 'Contents: Read & Write' permission for this repository." });
+      }
+
+      // 2. Commit and push the standalone HQ index.html content (base64 encoded)
+      const putFileUrl = `https://api.github.com/repos/${owner}/${repoName}/contents/${cleanPath}`;
+      const base64Content = Buffer.from(content, "utf-8").toString("base64");
+
+      const putBody: any = {
+        message: message,
+        content: base64Content,
+        branch: cleanBranch,
+      };
+      if (fileSha) {
+        putBody.sha = fileSha;
+      }
+
+      const putResponse = await fetch(putFileUrl, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token.trim()}`,
+          "Accept": "application/vnd.github.v3+json",
+          "Content-Type": "application/json",
+          "User-Agent": "QuizBuilder-HQ-Publisher",
+        },
+        body: JSON.stringify(putBody),
+      });
+
+      const putData: any = await putResponse.json();
+
+      if (!putResponse.ok) {
+        return res.status(putResponse.status).json({
+          error: putData.message || "Failed to commit file to GitHub repository.",
+          details: putData,
+        });
+      }
+
+      const pagesUrl = `https://${owner.toLowerCase()}.github.io/${repoName}/`;
+      const repoUrl = `https://github.com/${owner}/${repoName}`;
+      const commitUrl = putData.commit?.html_url || `${repoUrl}/commits/${cleanBranch}`;
+
+      res.json({
+        success: true,
+        message: fileSha ? "Hosted Quiz (HQ) updated successfully on GitHub!" : "Hosted Quiz (HQ) published successfully on GitHub!",
+        repo: cleanRepo,
+        branch: cleanBranch,
+        filePath: cleanPath,
+        commitSha: putData.commit?.sha,
+        commitUrl: commitUrl,
+        repoUrl: repoUrl,
+        pagesUrl: pagesUrl,
+        publishedAt: new Date().toISOString(),
+      });
+    } catch (error: any) {
+      console.error("GitHub Publish Error:", error);
+      res.status(500).json({ error: error.message || "Internal server error while publishing to GitHub." });
     }
   });
 

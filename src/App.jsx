@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Settings, Plus, Trash2, CheckCircle2, BarChart2, Mail, Lock, ArrowRight, ArrowLeft, Download, Code, Phone, RefreshCw, Eye, FileText, Upload, Image, AlertCircle } from 'lucide-react';
+import { Settings, Plus, Trash2, CheckCircle2, BarChart2, Mail, Lock, ArrowRight, ArrowLeft, Download, Code, Phone, RefreshCw, Eye, FileText, Upload, Image, AlertCircle, Globe, ExternalLink, Send, Key, Check } from 'lucide-react';
 import JSZip from 'jszip';
 import { generateStandaloneHtml, generateReadme, generateLeadPayloadSchema } from './generateStandaloneQuiz';
 
@@ -19,6 +19,12 @@ const DEFAULT_CONFIG = {
   integration: {
     webhookUrl: '',
     geminiApiKey: '',
+    githubToken: '',
+    githubRepo: '',
+    githubBranch: 'main',
+    githubFilePath: 'index.html',
+    lastPublishedAt: '',
+    lastPublishUrl: '',
   },
   results: [
     { maxScore: 30, title: 'Workplace at Risk', tone: 'Critical Gap', color: '#FCE8E6', desc: 'Your workplace is not prepared for AI-era work. Focus, collaboration and adaptability barriers are likely limiting employee performance.', cta: 'Book a Strategy Consultation' },
@@ -319,7 +325,103 @@ export default function App() {
   const [telSent, setTelSent] = useState(false);
 
   const [showExportModal, setShowExportModal] = useState(false);
-  const [showLinkPopup, setShowLinkPopup] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishStatus, setPublishStatus] = useState(null);
+  const [showTokenSecret, setShowTokenSecret] = useState(false);
+
+  // Sync token and repo from localStorage on initial load
+  useEffect(() => {
+    const savedToken = localStorage.getItem('qb_github_token');
+    const savedRepo = localStorage.getItem('qb_github_repo');
+    const savedBranch = localStorage.getItem('qb_github_branch');
+    if (savedToken || savedRepo) {
+      setConfig(prev => ({
+        ...prev,
+        integration: {
+          ...prev.integration,
+          githubToken: prev.integration.githubToken || savedToken || '',
+          githubRepo: prev.integration.githubRepo || savedRepo || '',
+          githubBranch: prev.integration.githubBranch || savedBranch || 'main',
+        }
+      }));
+    }
+  }, []);
+
+  const handlePublishToGitHub = async () => {
+    const token = config.integration?.githubToken || localStorage.getItem('qb_github_token') || '';
+    const repo = config.integration?.githubRepo || localStorage.getItem('qb_github_repo') || '';
+    const branch = config.integration?.githubBranch || localStorage.getItem('qb_github_branch') || 'main';
+    const filePath = config.integration?.githubFilePath || 'index.html';
+
+    if (!token.trim()) {
+      setPublishStatus({ success: false, message: 'Please provide your GitHub Personal Access Token (PAT) with repo/contents permissions.' });
+      setShowPublishModal(true);
+      return;
+    }
+    if (!repo.trim() || !repo.includes('/')) {
+      setPublishStatus({ success: false, message: 'Please enter a valid repository in "owner/repo" format (e.g. username/hosted-quiz).' });
+      setShowPublishModal(true);
+      return;
+    }
+
+    setIsPublishing(true);
+    setPublishStatus(null);
+
+    try {
+      // 1. Generate standalone pure Hosted Quiz (HQ) HTML - zero builder UI, zero points
+      const hqHtml = generateStandaloneHtml(config);
+
+      // 2. Call backend proxy to commit and push directly to GitHub repository
+      const response = await fetch('/api/publish-github', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: token.trim(),
+          repo: repo.trim(),
+          branch: branch.trim() || 'main',
+          filePath: filePath.trim() || 'index.html',
+          content: hqHtml,
+          commitMessage: `🚀 Live Hosted Quiz (HQ) Publish - ${new Date().toLocaleString()}`,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to publish to GitHub.');
+      }
+
+      setPublishStatus({
+        success: true,
+        message: data.message || 'Hosted Quiz published successfully!',
+        pagesUrl: data.pagesUrl,
+        commitUrl: data.commitUrl,
+        repoUrl: data.repoUrl,
+        publishedAt: data.publishedAt,
+      });
+
+      // Save token, repo, branch persistently so 1-click works every time
+      localStorage.setItem('qb_github_token', token.trim());
+      localStorage.setItem('qb_github_repo', repo.trim());
+      localStorage.setItem('qb_github_branch', (branch.trim() || 'main'));
+
+      setConfig(prev => ({
+        ...prev,
+        integration: {
+          ...prev.integration,
+          lastPublishedAt: data.publishedAt,
+          lastPublishUrl: data.pagesUrl,
+        }
+      }));
+    } catch (err) {
+      setPublishStatus({
+        success: false,
+        message: err.message || 'An error occurred while publishing to GitHub.',
+      });
+    } finally {
+      setIsPublishing(false);
+    }
+  };
 
   const handleAiContentClick = (e) => {
     const link = e.target.closest('a');
@@ -436,7 +538,7 @@ export default function App() {
             ${aiReport}
           </div>
 
-          ' + '<' + 'script>window.onload = function() { setTimeout(function() { window.print(); }, 500); };<' + '/script>' + '
+          <script>window.onload = function() { setTimeout(function() { window.print(); }, 500); };</script>
         </body>
       </html>
     `);
@@ -646,14 +748,18 @@ export default function App() {
         <div class="footnotes-box">
           <h4>📚 Cited Sources & Benchmark Research References</h4>
           <ol class="footnotes-list">
-            <li id="fn-uc-irvine"><strong>UC Irvine / Wall Street Journal Focus Study:</strong> Workplace interruption research demonstrating a 23min 15sec task-switching recovery overhead per interruption ($28,000/employee/year in lost billable productivity).</li>
-            <li id="fn-sap"><strong>SAP Workplace Health Index Benchmark:</strong> Enterprise spatial and well-being study showing each 1% increase in index yields $90M–$100M in annual operating profit gain.</li>
-            <li id="fn-cisco"><strong>Cisco PENN 1 & Osaka Hybrid Workspace Blueprint:</strong> Office redesign achieving a 40% increase in collaboration zones, 13% workstation capacity gain in 36% less footprint, and $1.2M lease/energy savings.</li>
-            <li id="fn-microsoft"><strong>Microsoft Modern AI Workplace Study:</strong> Reengineered AI co-creation workspaces reducing task-switching overhead, eliminating 1.2 hrs/day of redundant sync meetings, and boosting developer velocity by 22%.</li>
-            <li id="fn-gensler"><strong>Gensler Workplace Index (Acoustic Focus & Retention):</strong> Companies providing high-STC acoustic focus zones exhibit 21% higher cognitive performance scores and 18% lower voluntary turnover.</li>
-            <li id="fn-paris-worklife"><strong>Steelcase Paris WorkLife Hybrid Lab:</strong> Technology-enabled video and acoustic focus pods resulting in a 13% direct gain in daily productivity and a 28% increase in workplace satisfaction.</li>
-            <li id="fn-iima"><strong>IIMA Ventures Startup Accelerator Case Study:</strong> Steelcase morphable Maker Labs and mobile acoustic boundaries enabled a 35% acceleration in product iteration cycles.</li>
-            <li id="fn-flex-agile"><strong>Steelcase Flex Agile Teams Study:</strong> High-performing cross-functional teams equipped with adaptable furniture and spatial reconfigurability are 5x more likely to be high-performing and profitable.</li>
+            <li id="fn-uc-irvine"><strong>UC Irvine / Wall Street Journal Focus Study:</strong> Workplace interruption research demonstrating a 23min 15sec task-switching recovery overhead per interruption ($28,000/employee/year in lost billable productivity). <a href="https://www.ics.uci.edu/~gmark/" target="_blank" rel="noopener noreferrer">UC Irvine Research</a> | <a href="https://www.wsj.com" target="_blank" rel="noopener noreferrer">WSJ Analysis</a></li>
+            <li id="fn-sap"><strong>SAP Workplace Health Index Benchmark:</strong> Enterprise spatial and well-being study showing each 1% increase in index yields $90M–$100M in annual operating profit gain. <a href="https://www.sap.com" target="_blank" rel="noopener noreferrer">SAP Enterprise Study</a></li>
+            <li id="fn-cisco"><strong>Cisco PENN 1 & Osaka Hybrid Workspace Blueprint:</strong> Office redesign achieving a 40% increase in collaboration zones, 13% workstation capacity gain in 36% less footprint, and $1.2M lease/energy savings. <a href="https://www.cisco.com/c/en/us/solutions/hybrid-work/penn-1.html" target="_blank" rel="noopener noreferrer">Cisco PENN 1 Blueprint</a></li>
+            <li id="fn-microsoft"><strong>Microsoft Modern AI Workplace Study:</strong> Reengineered AI co-creation workspaces reducing task-switching overhead, eliminating 1.2 hrs/day of redundant sync meetings, and boosting developer velocity by 22%. <a href="https://www.steelcase.com/research/" target="_blank" rel="noopener noreferrer">Steelcase Workspace Research</a></li>
+            <li id="fn-gensler"><strong>Gensler Workplace Index (Acoustic Focus & Retention):</strong> Companies providing high-STC acoustic focus zones exhibit 21% higher cognitive performance scores and 18% lower voluntary turnover. <a href="https://www.gensler.com/gri/global-workplace-survey-2024" target="_blank" rel="noopener noreferrer">Gensler Survey</a></li>
+            <li id="fn-paris-worklife"><strong>Steelcase Paris WorkLife Hybrid Lab:</strong> Technology-enabled video and acoustic focus pods resulting in a 13% direct gain in daily productivity and a 28% increase in workplace satisfaction. <a href="https://www.steelcase.com/research/articles/topics/hybrid-work/" target="_blank" rel="noopener noreferrer">Steelcase Hybrid Work Lab</a></li>
+            <li id="fn-iima"><strong>IIMA Ventures Startup Accelerator Case Study:</strong> Steelcase morphable Maker Labs and mobile acoustic boundaries enabled a 35% acceleration in product iteration cycles. <a href="https://swiy.co/Steelcase-community-based-design" target="_blank" rel="noopener noreferrer">Community-Based Design Case Study</a></li>
+            <li id="fn-flex-agile"><strong>Steelcase Flex Agile Teams Study:</strong> High-performing cross-functional teams equipped with adaptable furniture and spatial reconfigurability are 5x more likely to be high-performing and profitable. <a href="https://www.steelcase.com/research/articles/topics/privacy/" target="_blank" rel="noopener noreferrer">Steelcase Flex Agile Teams Study</a></li>
+            <li id="fn-mckinsey"><strong>McKinsey & Company State of AI & Future of Work Report:</strong> Global AI deployment benchmark detailing generative AI productivity curves and spatial collaboration requirements. <a href="https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai" target="_blank" rel="noopener noreferrer">McKinsey AI Report</a></li>
+            <li id="fn-gartner"><strong>Gartner Digital Workplace & Smart Office Analytics:</strong> Analytics on smart office sensors, acoustic isolation, and agile pod density. <a href="https://www.gartner.com/en/information-technology/insights/digital-workplace" target="_blank" rel="noopener noreferrer">Gartner Digital Workplace</a></li>
+            <li id="fn-hbr"><strong>Harvard Business Review & BCG Generative AI Productivity Study:</strong> Empirical research on AI-assisted team output, task quality gains, and project velocity acceleration. <a href="https://hbr.org/topic/subject/ai-and-machine-learning" target="_blank" rel="noopener noreferrer">HBR AI Research</a></li>
+            <li id="fn-steelcase-privacy"><strong>Steelcase Privacy & Acoustic Pods Research:</strong> Applied environmental study on acoustic transmission class (STC 38+), speech privacy, and focus recovery in open-plan spaces. <a href="https://www.steelcase.com/research/articles/topics/privacy/" target="_blank" rel="noopener noreferrer">Steelcase Acoustic Privacy Guide</a> | <a href="https://www.steelcase.com/products/" target="_blank" rel="noopener noreferrer">Steelcase Products</a></li>
           </ol>
         </div>
       `);
@@ -791,8 +897,30 @@ export default function App() {
             <h2><Settings size={20} /> Quiz Builder</h2>
             <div style={{display:'flex', gap:6, alignItems:'center'}}>
               <button className="btn btn-secondary" onClick={() => setIsVisitorPreview(true)} style={{fontSize:12, padding:'6px 10px'}} title="Preview standalone quiz view without builder sidebar"><Eye size={14}/> Preview</button>
-              <button className="btn btn-secondary" onClick={() => { localStorage.removeItem('quizBuilderConfig'); window.location.reload(); }} style={{fontSize:12, padding:'6px 10px'}}>Reset</button>
-              <button className="builder-export-btn" onClick={exportGitHubFiles}><Download size={15}/> Export</button>
+              <button 
+                onClick={() => {
+                  setShowPublishModal(true);
+                  handlePublishToGitHub();
+                }} 
+                style={{
+                  background: '#059669', 
+                  color: 'white', 
+                  border: 'none', 
+                  padding: '6px 12px', 
+                  borderRadius: '6px', 
+                  fontSize: '12px', 
+                  fontWeight: '600', 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '5px', 
+                  cursor: 'pointer',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.08)'
+                }} 
+                title="1-Click Publish live quiz to GitHub Pages"
+              >
+                <Globe size={14}/> Publish
+              </button>
+              <button className="builder-export-btn" onClick={exportGitHubFiles} style={{padding: '6px 10px', fontSize: 12}}><Download size={14}/> Export</button>
             </div>
           </div>
         
@@ -800,8 +928,8 @@ export default function App() {
           <button className={`tab-btn ${activeTab === 'content' ? 'active' : ''}`} onClick={() => setActiveTab('content')}>Content</button>
           <button className={`tab-btn ${activeTab === 'questions' ? 'active' : ''}`} onClick={() => setActiveTab('questions')}>Questions & Scoring</button>
           <button className={`tab-btn ${activeTab === 'theme' ? 'active' : ''}`} onClick={() => setActiveTab('theme')}>Theme</button>
-          <button className={`tab-btn ${activeTab === 'integration' ? 'active' : ''}`} onClick={() => setActiveTab('integration')}>
-            Integration {!isIntegrationUnlocked && <Lock size={12} style={{ marginLeft: '4px', display: 'inline-block', verticalAlign: 'middle' }} />}
+          <button className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
+            Settings {!isIntegrationUnlocked && <Lock size={12} style={{ marginLeft: '4px', display: 'inline-block', verticalAlign: 'middle' }} />}
           </button>
         </div>
 
@@ -1054,15 +1182,15 @@ export default function App() {
             </>
           )}
 
-          {activeTab === 'integration' && (
+          {activeTab === 'settings' && (
             !isIntegrationUnlocked ? (
               <div style={{ padding: '24px 16px', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px', textAlign: 'center' }}>
                 <div style={{ width: '44px', height: '44px', background: '#FEF3C7', color: '#D97706', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
                   <Lock size={22} />
                 </div>
-                <h3 style={{ margin: '0 0 6px', fontSize: '15px', fontWeight: '600', color: '#111827' }}>Integration Settings Locked</h3>
+                <h3 style={{ margin: '0 0 6px', fontSize: '15px', fontWeight: '600', color: '#111827' }}>Settings &amp; Keys Locked</h3>
                 <p style={{ margin: '0 0 16px', fontSize: '12px', color: '#6B7280', lineHeight: '1.5' }}>
-                  Enter password to view and edit Webhook URLs and Gemini API keys.
+                  Enter password to view and edit GitHub Publishing credentials, Webhooks, and Gemini API keys.
                 </p>
                 <form onSubmit={(e) => {
                   e.preventDefault();
@@ -1093,7 +1221,7 @@ export default function App() {
                     </div>
                   )}
                   <button className="btn btn-primary" type="submit" style={{ width: '100%', justifyContent: 'center', padding: '10px' }}>
-                    Unlock Integration
+                    Unlock Settings
                   </button>
                 </form>
               </div>
@@ -1108,7 +1236,7 @@ export default function App() {
                     onClick={() => setIsIntegrationUnlocked(false)} 
                     style={{ fontSize: '11px', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: '4px' }}
                   >
-                    <Lock size={12} /> Lock Tab
+                    <Lock size={12} /> Lock Settings
                   </button>
                 </div>
                 <div className="field-group">
@@ -1458,6 +1586,137 @@ export default function App() {
                   <label>Gemini API Key (For Custom AI Reports)</label>
                   <input placeholder="AIzaSy..." type="password" value={config.integration.geminiApiKey} onChange={e => setConfig({...config, integration: {...config.integration, geminiApiKey: e.target.value}})} />
                   <p style={{fontSize:'12px', color:'#6B7280', marginTop:'8px'}}>Get a free key from Google AI Studio. If provided, the final report will automatically generate a custom analysis using Gemini 3.5 Flash-Lite.</p>
+                </div>
+
+                <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '2px solid #E5E7EB' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <label style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', color: '#111827', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Globe size={16} color="#059669" /> 1-Click GitHub Pages Publishing
+                    </label>
+                    <span style={{ fontSize: '11px', background: '#D1FAE5', color: '#065F46', padding: '2px 8px', borderRadius: '12px', fontWeight: '600' }}>
+                      Live Deploy
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '12px', color: '#4B5563', lineHeight: 1.5, marginBottom: '14px' }}>
+                    Publish your standalone hosted quiz (HQ) directly to your GitHub repository in 1 click. Zero builder controls and zero scoring formulas are exposed to respondents.
+                  </p>
+
+                  <div className="field-group">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <label style={{ fontSize: '11px', color: '#374151' }}>GitHub Personal Access Token (PAT)</label>
+                      <a 
+                        href="https://github.com/settings/tokens/new?scopes=repo&description=QuizBuilder+Live+Publishing" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ fontSize: '11px', color: '#2563EB', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                      >
+                        Generate Token <ExternalLink size={10} />
+                      </a>
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <input 
+                        type={showTokenSecret ? "text" : "password"} 
+                        placeholder="ghp_xxxxxxxxxxxx" 
+                        value={config.integration?.githubToken || ''} 
+                        onChange={e => {
+                          const val = e.target.value;
+                          setConfig(prev => ({ ...prev, integration: { ...prev.integration, githubToken: val } }));
+                          localStorage.setItem('qb_github_token', val);
+                        }} 
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => setShowTokenSecret(!showTokenSecret)} 
+                        style={{ background: '#F3F4F6', border: '1px solid #D1D5DB', borderRadius: '6px', padding: '0 10px', cursor: 'pointer', fontSize: '11px', color: '#4B5563', whiteSpace: 'nowrap' }}
+                      >
+                        {showTokenSecret ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="field-group">
+                    <label style={{ fontSize: '11px', color: '#374151' }}>GitHub Repository (owner/repo)</label>
+                    <input 
+                      placeholder="e.g. ardentcentury/hosted-quiz" 
+                      value={config.integration?.githubRepo || ''} 
+                      onChange={e => {
+                        const val = e.target.value;
+                        setConfig(prev => ({ ...prev, integration: { ...prev.integration, githubRepo: val } }));
+                        localStorage.setItem('qb_github_repo', val);
+                      }} 
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div className="field-group">
+                      <label style={{ fontSize: '11px', color: '#374151' }}>Branch</label>
+                      <input 
+                        placeholder="main or gh-pages" 
+                        value={config.integration?.githubBranch || 'main'} 
+                        onChange={e => {
+                          const val = e.target.value;
+                          setConfig(prev => ({ ...prev, integration: { ...prev.integration, githubBranch: val } }));
+                          localStorage.setItem('qb_github_branch', val);
+                        }} 
+                      />
+                    </div>
+                    <div className="field-group">
+                      <label style={{ fontSize: '11px', color: '#374151' }}>Target File</label>
+                      <input 
+                        placeholder="index.html" 
+                        value={config.integration?.githubFilePath || 'index.html'} 
+                        onChange={e => setConfig(prev => ({ ...prev, integration: { ...prev.integration, githubFilePath: e.target.value } }))} 
+                      />
+                    </div>
+                  </div>
+
+                  <button 
+                    type="button"
+                    onClick={handlePublishToGitHub}
+                    disabled={isPublishing}
+                    style={{
+                      width: '100%',
+                      background: isPublishing ? '#9CA3AF' : '#059669',
+                      color: 'white',
+                      border: 'none',
+                      padding: '10px',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      cursor: isPublishing ? 'not-allowed' : 'pointer',
+                      marginTop: '8px'
+                    }}
+                  >
+                    {isPublishing ? (
+                      <>
+                        <RefreshCw size={15} style={{ animation: 'spin 1s linear infinite' }} /> Publishing to GitHub...
+                      </>
+                    ) : (
+                      <>
+                        <Globe size={15} /> 🚀 1-Click Publish to GitHub Pages
+                      </>
+                    )}
+                  </button>
+
+                  {config.integration?.lastPublishedAt && (
+                    <div style={{ marginTop: '10px', fontSize: '11px', color: '#4B5563', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>Last Published: {new Date(config.integration.lastPublishedAt).toLocaleTimeString()}</span>
+                      {config.integration.lastPublishUrl && (
+                        <a 
+                          href={config.integration.lastPublishUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          style={{ color: '#059669', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '3px', textDecoration: 'none' }}
+                        >
+                          Open Live Site <ExternalLink size={11} />
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
               </>
             )
@@ -1831,34 +2090,140 @@ export default function App() {
         </div>
       )}
 
-      {showLinkPopup && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(17, 24, 39, 0.6)', backdropFilter: 'blur(4px)',
-          zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
-        }}>
-          <div style={{
-            background: 'white', borderRadius: '12px', width: '100%', maxWidth: '420px', padding: '24px',
-            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', border: '1px solid #E5E7EB', textAlign: 'center'
-          }}>
-            <div style={{
-              width: '48px', height: '48px', borderRadius: '50%', background: '#EFF6FF', color: '#1D4ED8',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '22px'
-            }}>
-              <FileText size={24} color="#1D4ED8" />
+      {/* 1-CLICK GITHUB PUBLISH STATUS MODAL */}
+      {showPublishModal && (
+        <div className="modal-overlay" onClick={() => setShowPublishModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottom: '1px solid #E5E7EB', paddingBottom: 12 }}>
+              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, color: '#111827' }}>
+                <Globe size={18} color="#059669" /> Publish to GitHub Pages
+              </h3>
+              <button onClick={() => setShowPublishModal(false)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#6B7280' }}>✕</button>
             </div>
-            <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 700, color: '#111827' }}>Link Protected</h3>
-            <p style={{ margin: '0 0 20px', fontSize: '14px', color: '#4B5563', lineHeight: 1.5 }}>
-              Full link included in PDF download.
-            </p>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button className="btn btn-secondary" onClick={() => setShowLinkPopup(false)} style={{ flex: 1, justifyContent: 'center' }}>
-                Close
-              </button>
-              <button className="btn btn-primary" onClick={() => { setShowLinkPopup(false); downloadPdfReport(); }} style={{ flex: 1, justifyContent: 'center' }}>
-                <FileText size={16} /> Download PDF
-              </button>
-            </div>
+
+            {isPublishing && (
+              <div style={{ textAlign: 'center', padding: '28px 16px' }}>
+                <RefreshCw size={36} color="#059669" style={{ animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
+                <h4 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: '600', color: '#111827' }}>Publishing Live Quiz...</h4>
+                <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>
+                  Bundling clean Hosted Quiz and committing directly to your GitHub repository.
+                </p>
+              </div>
+            )}
+
+            {!isPublishing && publishStatus?.success && (
+              <div>
+                <div style={{ textAlign: 'center', padding: '12px 0 20px' }}>
+                  <div style={{ width: '48px', height: '48px', background: '#D1FAE5', color: '#059669', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                    <Check size={26} />
+                  </div>
+                  <h4 style={{ margin: '0 0 6px', fontSize: '17px', fontWeight: '600', color: '#065F46' }}>
+                    {publishStatus.message}
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#4B5563', lineHeight: '1.5' }}>
+                    Your clean, standalone Hosted Quiz (HQ) has been pushed to GitHub.
+                  </p>
+                </div>
+
+                {publishStatus.pagesUrl && (
+                  <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px', padding: '14px', marginBottom: '16px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#166534', textTransform: 'uppercase', marginBottom: '4px' }}>
+                      Live GitHub Pages URL
+                    </div>
+                    <a 
+                      href={publishStatus.pagesUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      style={{ fontSize: '13px', color: '#059669', fontWeight: '600', wordBreak: 'break-all', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}
+                    >
+                      {publishStatus.pagesUrl} <ExternalLink size={13} />
+                    </a>
+                  </div>
+                )}
+
+                <div style={{ fontSize: '12px', color: '#6B7280', background: '#F9FAFB', padding: '10px 12px', borderRadius: '6px', marginBottom: '18px', lineHeight: 1.4 }}>
+                  ℹ️ <strong>GitHub Note:</strong> GitHub Pages typically updates within 30-60 seconds. If your latest edits don't appear right away, perform a hard refresh (<code>Ctrl+Shift+R</code> or <code>Cmd+Shift+R</code>).
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                  {publishStatus.commitUrl && (
+                    <a 
+                      href={publishStatus.commitUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="btn btn-secondary"
+                      style={{ fontSize: '12px', padding: '8px 12px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      View Commit ↗
+                    </a>
+                  )}
+                  {publishStatus.pagesUrl && (
+                    <a 
+                      href={publishStatus.pagesUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="btn btn-primary"
+                      style={{ background: '#059669', fontSize: '12px', padding: '8px 16px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                    >
+                      <ExternalLink size={13} /> Open Live Site
+                    </a>
+                  )}
+                  <button className="btn btn-secondary" onClick={() => setShowPublishModal(false)} style={{ fontSize: '12px' }}>
+                    Done
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!isPublishing && publishStatus && !publishStatus.success && (
+              <div>
+                <div style={{ textAlign: 'center', padding: '12px 0 16px' }}>
+                  <div style={{ width: '48px', height: '48px', background: '#FEE2E2', color: '#DC2626', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                    <AlertCircle size={26} />
+                  </div>
+                  <h4 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: '600', color: '#991B1B' }}>
+                    Publishing Failed
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#4B5563', lineHeight: '1.5' }}>
+                    {publishStatus.message}
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={() => {
+                      setShowPublishModal(false);
+                      setActiveTab('settings');
+                    }}
+                    style={{ fontSize: '12px' }}
+                  >
+                    Open Settings &amp; Keys
+                  </button>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={handlePublishToGitHub}
+                    style={{ fontSize: '12px', background: '#059669' }}
+                  >
+                    <RefreshCw size={12} /> Retry
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!isPublishing && !publishStatus && (
+              <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                <p style={{ fontSize: '13px', color: '#4B5563', marginBottom: '16px' }}>
+                  Ready to publish to GitHub Pages. Click publish to push your latest edits.
+                </p>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                  <button className="btn btn-secondary" onClick={() => setShowPublishModal(false)}>Cancel</button>
+                  <button className="btn btn-primary" onClick={handlePublishToGitHub} style={{ background: '#059669' }}>
+                    <Globe size={14} /> Publish Now
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
